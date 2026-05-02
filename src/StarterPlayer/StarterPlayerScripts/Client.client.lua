@@ -1,0 +1,1 @@
+require(game:GetService("ReplicatedStorage"):WaitForChild("Client")).Init(game:GetService("Players").LocalPlayer)

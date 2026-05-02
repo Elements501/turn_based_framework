@@ -46,6 +46,7 @@ function module.Init(part: Instance, id: number)
             -- Rounds
             Team = "string",
             Name = "string",
+            Owner = "string",
         }
         for key, attrType in pairs(attrFormat) do -- Ensure attributes list are correct
             if attrList[key] == nil then warn("Missing Attributes: " .. key .. attrType) return false end
@@ -71,9 +72,8 @@ function module.Init(part: Instance, id: number)
     })
 
     -- Unit Action
-    local function Act()
-        print("Actioned: " .. id, sharedList)
-        task.wait(1)
+
+    local function FinishAction()
         serverAction:Invoke({
             action = 1,
             send = id,
@@ -81,9 +81,32 @@ function module.Init(part: Instance, id: number)
         })
     end
 
+    local function botAction()
+        -- Smart Action
+        task.wait(1)
+        FinishAction()
+    end
+
+    local function Action()
+        print("Actioned: " .. id, sharedList, sharedList.unitList[id].Owner)
+        if sharedList.unitList[id].Owner == "ai" then
+            botAction()
+            return
+        end
+
+        local plrOwner: Player = game:GetService("Players"):FindFirstChild(sharedList.unitList[id].Owner)
+        if not plrOwner then warn("Unknown Player Action") return end
+        clientAction:InvokeClient(plrOwner, {
+            action = 1,
+            send = id,
+            receive = plrOwner,
+            unitData = sharedList.unitList[id]
+        })
+    end
+
     serverFuncList[id] = function(data)
         if data.receive ~= id then return end -- Not for this unit
-        -- Execute server actions
+
         local function executeFunction(func)
             task.spawn(function()
                 local result = func()
@@ -91,7 +114,20 @@ function module.Init(part: Instance, id: number)
             end)
         end
 
-        if (data.action == 7) then executeFunction(Act) end
+        if (data.action == 7) then executeFunction(Action) end
+    end
+
+    clientFuncList[id] = function(data)
+        if data.receive ~= id then return end
+
+        local function executeFunction(func)
+            task.spawn(function()
+                local result = func()
+                if type(result) == table then if result.Error then warn(result.Error) end end
+            end)
+        end
+
+        if (data.action == 2) then executeFunction(FinishAction) end
     end
 end
 
@@ -178,6 +214,14 @@ function module.ServerScript()
 
         elseif serverFuncList[data.receive] then -- Unit
             serverFuncList[data.receive](data)
+        end
+    end
+
+    clientAction.OnServerInvoke = function(plr, data)
+        if data.receive == 0 then -- Server
+            -- Client to Sever direct
+        elseif clientFuncList[data.receive] then -- Unit
+            clientFuncList[data.receive](data)
         end
     end
 

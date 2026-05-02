@@ -1,1 +1,1 @@
-require(game:GetService("ReplicatedStorage").Unit).Init(script, 0)
+require(game:GetService("ReplicatedStorage"):WaitForChild("Server")).Init(script, 0)
