@@ -1,7 +1,7 @@
 local module = {}
 -- Services
 local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
-local SELF: ModuleScript = RS:WaitForChild("Unit")
+local SELF: ModuleScript = RS:WaitForChild("Server")
 
 -- Variables
 local sharedList = {
@@ -14,10 +14,15 @@ local sharedList = {
     actionOrder = {}, -- Down the id number
     actionNumber = 1, -- Which unit gets to act
 }
-local nextAction: BindableFunction = (RS:FindFirstChild("nextAction") :: BindableFunction?) or Instance.new("BindableFunction")
-    nextAction.Name = "nextAction"
-    nextAction.Parent = RS
-local actionFuncList = {}
+
+local serverAction: BindableFunction = (RS:FindFirstChild("ServerAction") :: BindableFunction?) or Instance.new("BindableFunction")
+    serverAction.Name = "ServerAction"
+    serverAction.Parent = RS
+local serverFuncList = {}
+local clientAction: RemoteFunction = (RS:FindFirstChild("ClientAction") :: RemoteFunction?) or Instance.new("RemoteFunction")
+    clientAction.Name = "ClientAction"
+    clientAction.Parent = RS
+local clientFuncList = {}
 
 function module.Init(part: Instance, id: number)
     -- Initialisation
@@ -59,7 +64,7 @@ function module.Init(part: Instance, id: number)
     end
     if not updateList() then warn("Failed to Check In") return end -- Run check in with False -> ERROR
 
-    nextAction:Invoke({
+    serverAction:Invoke({
         action = 5,
         send = id,
         receive = 0,
@@ -69,14 +74,14 @@ function module.Init(part: Instance, id: number)
     local function Act()
         print("Actioned: " .. id, sharedList)
         task.wait(1)
-        nextAction:Invoke({
+        serverAction:Invoke({
             action = 1,
             send = id,
             receive = 0,
         })
     end
 
-    actionFuncList[id] = function(data)
+    serverFuncList[id] = function(data)
         if data.receive ~= id then return end -- Not for this unit
         -- Execute server actions
         local function executeFunction(func)
@@ -100,7 +105,7 @@ function module.ServerScript()
 
         task.wait(3) -- TEMP: Wait for all instances to check in
         -- TODO: Can get a number of total units, wait until totalUnits == #UnitNumGiven
-        nextAction:Invoke({ -- Start Game
+        serverAction:Invoke({ -- Start Game
             action = 0,
             send = 0,
             receive = 0,
@@ -129,7 +134,7 @@ function module.ServerScript()
         end
         sharedList.actionOrder = orderedList
 
-        nextAction:Invoke({
+        serverAction:Invoke({
             action = 1,
             send = 0,
             receive = 0,
@@ -141,14 +146,14 @@ function module.ServerScript()
             sharedList.roundNumber += 1
             sharedList.actionNumber = 1
             print("Next Round")
-            nextAction:Invoke({
+            serverAction:Invoke({
                 action = 1,
                 send = 0,
                 receive = 0,
             })
         else
             print("Server Action", sharedList)
-            nextAction:Invoke({
+            serverAction:Invoke({
                 action = 7,
                 send = 0,
                 receive = sharedList.actionOrder[sharedList.actionNumber],
@@ -158,7 +163,7 @@ function module.ServerScript()
     end
 
     -- Direct to correct function
-    nextAction.OnInvoke = function(data)
+    serverAction.OnInvoke = function(data)
         if data.receive == 0 then -- Server
             -- Execute server actions
             local function executeFunction(func)
@@ -171,8 +176,8 @@ function module.ServerScript()
             if (data.action == 0 or data.action == 3) then executeFunction(OrderUnits) end
             if (data.action == 1) then executeFunction(RoundCounter) end
 
-        elseif actionFuncList[data.receive] then -- Unit
-            actionFuncList[data.receive](data)
+        elseif serverFuncList[data.receive] then -- Unit
+            serverFuncList[data.receive](data)
         end
     end
 
