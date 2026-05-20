@@ -10,7 +10,7 @@ Framework for a turn-based game that can be used as a base before customisation.
     ```lua
     -- ServerAction: BindableFunction (data: list)
     data = {
-        action: number -- {0: Start, 1: Next, 2: Round, 3: Reorder, 4: Action, 5: Add, 6: Death, 7: Act, 8: React}
+        action: number -- {0: Start, 1: Next, 2: Round, 3: Reorder, 4: Damage, 5: Add, 6: Death, 7: Act}
         send: number -- id
         receive: number -- id | id table
         -- misc. data
@@ -20,9 +20,9 @@ Framework for a turn-based game that can be used as a base before customisation.
     ```lua
     -- ClientAction: RemoteFunction (data: list)
     data = {
-        action: number -- {1: PlayerAct, 2: ServerReact}
-        send: number -- id
-        receive: number -- plr | plr table
+        action: number -- {-1: Transfer Data; 1: PlayerAct, 2: Rest, 3: Attack, 4: PlayerAttack}
+        send: number -- id / plr
+        receive: number -- plr | plr table / id
         -- misc. data
     }
     ```
