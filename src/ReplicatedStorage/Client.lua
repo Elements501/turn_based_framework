@@ -94,6 +94,13 @@ function module.Init(plr)
         -- TODO: UI Management with unitData
     end
 
+    local function RemoveChildUI(parentUI)
+        for _, child in ipairs(parentUI:GetChildren()) do
+            if child:IsA("UIGridLayout") then continue end
+            child:Destroy()
+        end
+    end
+
     local function AttackEnemy(skill, enemyList) -- enemyList is numbered, skill is string-indexed with Name
         if skill.Target == 1 then -- Single Attack
             for _, enemy in ipairs(enemyList) do
@@ -107,41 +114,54 @@ function module.Init(plr)
                     clientAction:InvokeServer({
                         action = 4,
                         send = plr,
-                        receive = 0,
+                        receive = unitId,
                         -- Extra
+                        skillList = skill,
                         target = enemy.Id
+                        -- TODO: Add buffs / debuffs
                     })
-                    return
+                    RemoveChildUI(guiInstances[6])
                 end)
             end
             guiInstances[6].Visible = true
         elseif skill.Target == -1  then -- Area Attack
+            -- Get enemy Id
+            local targetIdList = {}
+            for _, enemy in ipairs(enemyList) do
+                table.insert(targetIdList, enemy.Id)
+            end
+
             clientAction:InvokeServer({
                 action = 4,
                 send = plr,
                 receive = unitId,
                 -- Extra
                 skillList = skill,
+                target = targetIdList, -- -1: All enemies
             })
         else warn("Unknown Target Range") return end
+        RemoveChildUI(guiInstances[5])
     end
 
     local function ChooseAttackTarget(data)
         if (not data.enemyList) then warn("Missing Data") return end
 
-        local skillList = dataList.attackActionList[data.Name]
-        local skillNames: {string} = {}
-        for name, _ in pairs(skillList) do table.insert(skillNames, name) end
-        table.sort(skillNames) -- Order alphabetically
+        local skillList = {}
+        for _, i in ipairs(dataList.unitAttackList[data.Name]) do
+            table.insert(skillList, dataList.attackActionList[i])
+        end
 
-        for _, attackAction in pairs(skillNames) do
+        local skillNames: {string} = {}
+        for _, skill in ipairs(skillList) do table.insert(skillNames, skill.Name) end
+
+        for num, name in ipairs(skillNames) do
             local button: TextButton = Instance.new("TextButton")
             button.Parent = guiInstances[5]
-            button.Text = attackAction
+            button.Text = name
             button.Size = UDim2.fromScale(0.1, 1)
 
             button.Activated:Connect(function()
-                AttackEnemy(skillList[attackAction], data.enemyList)
+                AttackEnemy(skillList[num], data.enemyList) -- skillList and skillNames must line up
                 guiInstances[5].Visible = false
                 return
             end)
