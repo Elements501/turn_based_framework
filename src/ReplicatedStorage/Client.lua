@@ -115,7 +115,6 @@ function module.Init(plr)
                         action = 4,
                         send = plr,
                         receive = unitId,
-                        -- Extra
                         skillList = skill,
                         target = enemy.Id
                         -- TODO: Add buffs / debuffs
@@ -135,9 +134,15 @@ function module.Init(plr)
                 action = 4,
                 send = plr,
                 receive = unitId,
-                -- Extra
                 skillList = skill,
                 target = targetIdList, -- -1: All enemies
+            })
+        elseif skill.Target ==  0 then -- Spawn Ally Unit
+            clientAction:InvokeServer({
+                action = 4,
+                send = plr,
+                receive = unitId,
+                skillList = skill,
             })
         else warn("Unknown Target Range") return end
         RemoveChildUI(guiInstances[5])
@@ -147,7 +152,7 @@ function module.Init(plr)
         if (not data.enemyList) then warn("Missing Data") return end
 
         local skillList = {}
-        for _, i in ipairs(dataList.unitAttackList[data.Name]) do
+        for _, i in ipairs(dataList.unitAttackList[data.Num]) do
             table.insert(skillList, dataList.attackActionList[i])
         end
 

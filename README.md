@@ -10,7 +10,7 @@ Framework for a turn-based game that can be used as a base before customisation.
     ```lua
     -- ServerAction: BindableFunction (data: list)
     data = {
-        action: number -- {0: Start, 1: Next, 2: Round, 3: Reorder, 4: Damage, 5: Add, 6: Death, 7: Act}
+        action: number -- {1: Next, 2: Round, 3: Reorder, 4: Damage, 5: Add, 6: Death, 7: Act}
         send: number -- id
         receive: number -- id | id table
         -- misc. data
@@ -25,6 +25,13 @@ Framework for a turn-based game that can be used as a base before customisation.
         receive: number -- plr | plr table / id
         -- misc. data
     }
+- `ApplyDamage(): function` reads `data.skillList.Target` to communicate its action, and then expects a format in the package: set in the Data list of `attackActionList`
+    ``` lua
+    data = {
+        (...) -- Essential Details
+        skillList = {...}
+    }
+    -- skill = { -3: All Attack, -2: Enemy Area Attack, -1: All Enemy Attack, 0: Summon Unit, 1: Single Attack }
     ```
 
 # Credits
