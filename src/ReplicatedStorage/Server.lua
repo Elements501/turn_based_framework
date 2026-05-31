@@ -18,14 +18,14 @@ local sharedList = {
 
 -- Data
 local attackActionList = {
-    [1] =   { Name = "Punch",   Damage = 5,   Target = -1,  Effect = {} },
-    [2] =   { Name = "Stab",    Damage = 10,  Target = 1,   Effect = {} },
-    [3] =   { Name = "Kick",    Damage = 5,   Target = 1,   Effect = {} },
+    [1] =   { Name = "Scream",   Damage = 2,   Target = -1,  Effect = {} },
+    [2] =   { Name = "Stab",    Damage = 5,  Target = 1,   Effect = {} },
+    [3] =   { Name = "Bump",    Damage = 3,   Target = 1,   Effect = {} },
     [4] =   { Name = "Mitosis", Damage = 2,   Target = 0,   Effect = {} },
 }
 local unitAttackList = {
-    [1] = {1, 3},
-    [2] = {1, 2, 3, 4},
+    [1] = {1, 2},
+    [2] = {3, 4},
 }
 
 local unitNumList = {
@@ -232,31 +232,42 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
     local function botAction()
         -- Obtain Enemy (Player Units)
-        local enemyList: {} = {} -- List of enemy stats
-        for _, enemy in pairs(sharedList.unitList) do
+        local enemyIdList: {number} = {} -- List of enemy stats
+        for _, enemy in ipairs(sharedList.unitList) do
             if enemy.Team ~= sharedList.unitList[id].Team then
-                table.insert(enemyList, enemy.Id)
+                table.insert(enemyIdList, enemy.Id)
             end
         end
         -- Smart Action
-        local rngAction: number = math.random(0, 1)
-        if rngAction == 0 then -- Action 0 uses direct package; Action 1 mock client action
-            ApplyDamage({ -- Directly apply damage on bot action (server side => safe)
+        local attackList: {number} = unitAttackList[sharedList.unitList[id].Num]
+        local rngAction: number = math.random(1, #attackList)
+
+        local attackAction: {} = attackActionList[attackList[rngAction]]
+        if attackAction.Target == 1 then -- Single Attack
+            local randEnemyId: number = enemyIdList[math.random(1, #enemyIdList)]
+            ApplyDamage({
                 action = 4,
                 send = id,
                 receive = id,
-                skillList = attackActionList[unitAttackList[sharedList.unitList[id].Num][1]],
-                target = enemyList,
+                skillList = attackAction,
+                target = randEnemyId
             })
-        elseif rngAction == 1 then
-            ApplyDamage({ -- Directly apply damage on bot action (server side => safe)
+        elseif attackAction.Target == -1  then -- Area Attack
+            ApplyDamage({
                 action = 4,
                 send = id,
                 receive = id,
-                skillList = attackActionList[unitAttackList[sharedList.unitList[id].Num][4]],
-                target = enemyList[1],
+                skillList = attackAction,
+                target = enemyIdList
             })
-        else warn("Unknown Action Number") return end
+        elseif attackAction.Target ==  0 then -- Spawn Ally Unit
+            ApplyDamage({
+                action = 4,
+                send = id,
+                receive = id,
+                skillList = attackAction,
+            })
+        else warn("Unknown Target Range") return end
     return end
 
     local function Action()
@@ -383,6 +394,16 @@ function module.ServerScript()
     end
 
      local function OrderUnits(data)
+        local function DecreaseOrder() -- To prevent skip over next unit
+            local unitId: number = data.unit
+            if unitId == nil then warn("Unknown Unit Deleted") return end
+
+            if table.find(sharedList.actionOrder, unitId) < sharedList.actionNumber then -- Unit act before now
+                sharedList.actionNumber -= 1 -- Consider summoned acted
+            end
+        end
+        if data.mode == -1 then DecreaseOrder() end
+
         local dexList = {}
         for unitId, unitList in pairs(sharedList.unitList) do
             table.insert(dexList, {
@@ -402,15 +423,15 @@ function module.ServerScript()
         end
         sharedList.actionOrder = orderedList
 
-        -- To prevent same unit run twice
-        local function IncreaseOrder()
-            local unitSummonedId: number = data.unitSummoned
+        local function IncreaseOrder() -- To prevent same unit run twice
+            local unitId: number = data.unit
+            if unitId == nil then warn("Unknown Unit Added") return end
 
-            if table.find(sharedList.actionOrder, unitSummonedId) < sharedList.actionNumber then -- Summoned act before now
+            if table.find(sharedList.actionOrder, unitId) < sharedList.actionNumber then -- Unit act before now
                 sharedList.actionNumber += 1 -- Consider summoned acted
             end
         end
-        if not (data.unitSummoned == nil) then IncreaseOrder() end
+        if data.mode == 1 then IncreaseOrder() end
     end
 
     local function RoundCounter()
@@ -435,13 +456,16 @@ function module.ServerScript()
     end
 
     local function RemoveUnit(data)
-        sharedList.unitList[data.send] = nil
-        sharedList.totalUnits -= 1
-        serverAction:Invoke({
+        serverAction:Invoke{
             action = 3,
             send = 0,
             receive = 0,
-        })
+            unit = data.send, -- Prevent skip over next unit
+            mode = -1, -- Delete
+        }
+
+        sharedList.unitList[data.send] = nil
+        sharedList.totalUnits -= 1
     end
 
     local function SummonUnit(data)
@@ -477,7 +501,8 @@ function module.ServerScript()
             action = 3,
             send = 0,
             receive = 0,
-            unitSummoned = idCounter, -- For counter to know which unit is summoned, prevent same unit run twice
+            unit = idCounter, -- For counter to know which unit is summoned, prevent same unit run twice
+            mode = 1, -- add
         })
         idCounter += 1
         return
