@@ -5,27 +5,17 @@ local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Teams = game:GetService("Teams")
 local SELF: ModuleScript = RS:WaitForChild("Server")
 
--- Variables
-local sharedList = {
-    -- Units
-    totalUnits = 0,
-    unitList = {},
-    -- Rounds
-    roundNumber = 0,
-    actionOrder = {}, -- Down the id number
-    actionNumber = 1, -- Which unit gets to act
-}
-
 -- Data
 local attackActionList = {
-    [1] =   { Name = "Scream",   Damage = 2,   Target = -1,  Effect = {} },
-    [2] =   { Name = "Stab",    Damage = 5,  Target = 1,   Effect = {} },
-    [3] =   { Name = "Bump",    Damage = 3,   Target = 1,   Effect = {} },
-    [4] =   { Name = "Mitosis", Damage = 2,   Target = 0,   Effect = {} },
+    [1] =   { Name = "Scream",  Damage = 2,     Target = -1,    Effect = nil },
+    [2] =   { Name = "Stab",    Damage = 5,     Target = 1,     Effect = nil },
+    [3] =   { Name = "Bump",    Damage = 3,     Target = 1,     Effect = nil },
+    [4] =   { Name = "Mitosis", Damage = 2,     Target = 0,     Effect = nil },
+    [5] =   { Name = "Poison",  Damage = 1,     Target = 1,     Effect = {[1] = 1, [2] = 3, [3] = 1} }
 }
 local unitAttackList = {
     [1] = {1, 2},
-    [2] = {3, 4},
+    [2] = {3, 4, 5},
 }
 
 local unitNumList = {
@@ -54,6 +44,27 @@ local unitNumList = {
         Effect = {}
     },
 }
+
+ -- Numbered string name for iterating effectList; not number as it will contain holes
+
+local effectName = {
+    [1] = "Poison",
+    [2] = "Regeneration",
+    [3] = "Adernaline",
+    [4] = "Rage",
+}
+
+-- Variables
+local sharedList = {
+    -- Units
+    totalUnits = 0,
+    unitList = {},
+    -- Rounds
+    roundNumber = 0,
+    actionOrder = {}, -- Down the id number
+    actionNumber = 1, -- Which unit gets to act
+}
+
 
 local serverAction: BindableFunction = (RS:FindFirstChild("ServerAction") :: BindableFunction?) or Instance.new("BindableFunction")
     serverAction.Name = "ServerAction"
@@ -97,22 +108,30 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     if not updateList() then warn("Failed to Check In") return end -- Run check in with False -> ERROR
 
     local function CreateHpBar(): {Instance}
-        local hpBar: BillboardGui = Instance.new("BillboardGui")
-        hpBar.Parent = part
-        hpBar.Adornee = part
-        hpBar.Name = "HpBar " .. id
-        hpBar.Size = UDim2.fromScale(5, 1)
-        hpBar.ExtentsOffset = Vector3.new(0, 3, 0)
+        local topBar: BillboardGui = Instance.new("BillboardGui")
+        topBar.Parent = part
+        topBar.Adornee = part
+        topBar.Name = "HpBar " .. id
+        topBar.Size = UDim2.fromScale(5, 2)
+        topBar.ExtentsOffset = Vector3.new(0, 6, 0)
 
+        local UIListLayout: UIListLayout = Instance.new("UIListLayout")
+        UIListLayout.Parent = topBar
+        UIListLayout.Name = "UIListLayout"
+        UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+        -- Hp Bar
         local hpBarBackground: Frame = Instance.new("Frame")
-        hpBarBackground.Parent = hpBar
+        hpBarBackground.Parent = topBar
+        hpBarBackground.Name = "Health Bar"
         hpBarBackground.BackgroundColor3 = Color3.new(1, 1, 1)
         hpBarBackground.BackgroundTransparency = 0
-        hpBarBackground.Size = UDim2.fromScale(1, 1)
+        hpBarBackground.Size = UDim2.fromScale(1, 0.5)
         hpBarBackground.ZIndex = 0
+        hpBarBackground.LayoutOrder = 2
 
         local hpBarBar: Frame = Instance.new("Frame")
-        hpBarBar.Parent = hpBar
+        hpBarBar.Parent = hpBarBackground
         hpBarBar.BackgroundColor3 = Color3.new(0, 0, 0)
         hpBarBar.BackgroundTransparency = 0
         hpBarBar.Size = UDim2.fromScale(0.96, 0.8)
@@ -120,23 +139,60 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         hpBarBar.ZIndex = 1
 
         local hpBarText: TextLabel = Instance.new("TextLabel")
-        hpBarText.Parent = hpBar
+        hpBarText.Parent = hpBarBackground
         hpBarText.Text = sharedList.unitList[id].Health .. " / " .. sharedList.unitList[id].MaxHealth
         hpBarText.TextColor3 = Color3.new(0.5, 0.5, 0.5)
         hpBarText.Size = UDim2.fromScale(1, 1)
-        hpBarText.BackgroundTransparency = 1
         hpBarText.TextScaled = true
+        hpBarText.BackgroundTransparency = 1
         hpBarText.ZIndex = 2
 
-        return {hpBar, hpBarBackground, hpBarBar, hpBarText} -- TEMP: no return False case; TODO: Add checking
+        -- Status Effect
+        local statusBackground: Frame = Instance.new("Frame")
+        statusBackground.Parent = topBar
+        statusBackground.Name = "Status Bar"
+        statusBackground.Size = UDim2.fromScale(1, 0.5)
+        statusBackground.BackgroundTransparency = 1
+        statusBackground.ZIndex = 0
+        statusBackground.LayoutOrder = 1
+
+        local UiGridLayout: UIGridLayout = Instance.new("UIGridLayout")
+        UiGridLayout.Parent = statusBackground
+        UiGridLayout.Name = "UIGridLayout"
+        UiGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        UiGridLayout.CellPadding = UDim2.fromScale(0.05, 0.05)
+        UiGridLayout.CellSize = UDim2.fromScale(0.2, 1)
+
+        local effectGui: Frame = Instance.new("Frame") -- Template, no parent
+        effectGui.BackgroundTransparency = 1
+
+        local effectGuiImage: ImageLabel = Instance.new("ImageLabel")
+        effectGuiImage.Name = "EffectImage"
+        effectGuiImage.Parent = effectGui
+        effectGuiImage.Size = UDim2.fromScale(1, 1)
+        effectGuiImage.ZIndex = 0
+
+        local effectGuiText: TextLabel = Instance.new("TextLabel")
+        effectGuiText.Name = "EffectText"
+        effectGuiText.Parent = effectGui
+        effectGuiText.Size = UDim2.fromScale(1, 1)
+        hpBarText.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+        hpBarText.TextScaled = true
+        effectGuiText.BackgroundTransparency = 1
+        effectGuiText.ZIndex = 1
+
+        return {
+            [1] = topBar,
+            [2] = hpBarBackground,
+            [3] = hpBarBar,
+            [4] = hpBarText,
+            [5] = statusBackground,
+            [6] = effectGui,
+            [7] = {} -- List for holding effectGui Clones
+        } -- TEMP: no return False case; TODO: Add checking
     end
     local unitUI: {} = CreateHpBar()
     if not unitUI then warn("Failed to Create HP Bar") return end -- False -> Error
-
-    local function UpdateUI()
-        unitUI[4].Text = sharedList.unitList[id].Health .. " / " .. sharedList.unitList[id].MaxHealth
-        unitUI[3].Size = UDim2.fromScale(sharedList.unitList[id].Health / sharedList.unitList[id].MaxHealth, unitUI[3].Size.Y.Scale)
-    end
 
     -- serverAction:Invoke({ -- TODO: Make units automatically add to id: 0, instead of FindUnits()
     --     action = 5,
@@ -145,7 +201,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     -- })
 
     -- Unit Action
-    local function FinishAction()
+    local function FinishAction() -- No event
         serverAction:Invoke({
             action = 1,
             send = id,
@@ -186,18 +242,18 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
                 send = id,
                 receive = data.target,
                 -- Extra
-                skillList = data.skillList
+                skillList = data.skillList,
             })
         elseif data.skillList.Target == -1 then -- Area Attack
             if typeof(data.target) ~= "table" then warn("Unknown Enemy List") return end
             for _, enemyId in ipairs(data.target) do
-            serverAction:Invoke({
-                action = 4,
-                send = id,
-                receive = enemyId,
-                -- Extra
-                skillList = data.skillList
-            })
+                serverAction:Invoke({
+                    action = 4,
+                    send = id,
+                    receive = enemyId,
+                    -- Extra
+                    skillList = data.skillList
+                })
             end
         elseif data.skillList.Target == 0 then -- Summon Ally Unit
             serverAction:Invoke({
@@ -212,13 +268,40 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         FinishAction()
     end
 
+    local effectId: number = 0
+    local function ApplyEffect(data) -- No event
+        local effect: {} = data.skillList.Effect or nil
+        if effect == nil then return end -- Attack has no effect
+
+        -- Create Gui
+        local effectFrame: Frame = unitUI[5]
+        local effectTemplate: Frame = unitUI[6]
+
+        local newEffect: Frame = effectTemplate:Clone()
+        newEffect.Name = effectName[effect[1]]
+        newEffect.Parent = effectFrame
+
+        newEffect.EffectText.Text = effect[2]
+        -- TODO: Set newEffect.EffectImage
+
+        -- Add effect into the list
+        if next(sharedList.unitList[id].Effect) == nil then sharedList.unitList[id].Effect = {} end -- Init .Effect table
+        effect[0] = effectId -- Give unique effectId
+        unitUI[7][effectId] = newEffect
+        effectId += 1
+        table.insert(sharedList.unitList[id].Effect, effect)
+    end
+
     local function TakeDamage(data)
-        -- TODO: Calculate any effect
+        -- Apply Effect
+        ApplyEffect(data)
 
         -- Calculate damage taken; TODO: Resistance + Critical + Vulnerability
         print(id, "Take Damage", data.skillList.Damage)
-        sharedList.unitList[id].Health -= data.skillList.Damage
-        UpdateUI()
+        sharedList.unitList[id].Health -= data.skillList.Damage -- TODO: Calculate Buffs / Debuffs
+        -- Update Gui
+        unitUI[4].Text = sharedList.unitList[id].Health .. " / " .. sharedList.unitList[id].MaxHealth
+        unitUI[3].Size = UDim2.fromScale(sharedList.unitList[id].Health / sharedList.unitList[id].MaxHealth, unitUI[3].Size.Y.Scale)
 
         if sharedList.unitList[id].Health <= 0 then
             serverAction:Invoke({
@@ -245,7 +328,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         local attackAction: {} = attackActionList[attackList[rngAction]]
         if attackAction.Target == 1 then -- Single Attack
             local randEnemyId: number = enemyIdList[math.random(1, #enemyIdList)]
-            ApplyDamage({
+            ApplyDamage({ -- Call func directly to mock player control; TODO: Change to use Events
                 action = 4,
                 send = id,
                 receive = id,
@@ -270,9 +353,55 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         else warn("Unknown Target Range") return end
     return end
 
+    local function DecreaseEffectDuration()
+        local effectList: {} = sharedList.unitList[id].Effect
+        if not next(effectList) then return end -- If effectList is {}
+
+        for effectNumber, effect in ipairs(effectList) do -- effect is by reference, so can change .Effect'
+            -- List
+            effect[2] -= 1 -- TODO: effect[2] == -1 for infinite duration
+            --Gui
+            unitUI[7][effect[0]].EffectText.Text = effect[2]
+
+            print(unitUI[7], effect)
+            if effect[2] == 0 then -- Run out
+                -- Gui
+                unitUI[7][effect[0]]:Destroy()
+                unitUI[7][effect[0]] = nil
+                -- List
+                effectList[effectNumber] = nil
+            end
+        end
+    end
+
+    local function ExecuteEffect()
+        local effectList: {} = sharedList.unitList[id].Effect
+        if not next(effectList) then return end
+
+        for _, effect in ipairs(effectList) do
+            if effect[2] <= 0 then effect[2] = 0 return end
+            print("Effect Executed", id, effect)
+
+            local function Damage()
+                local Dmg: number | nil = effect[3]
+                if Dmg == nil then return end
+
+                local DmgAdd: number = effect[4] or 0
+                local DmgMult: number = effect[5] or 0
+                serverAction:Invoke({ action = 4, send = id, receive = id, skillList = { Damage = Dmg * (DmgMult + 1) + DmgAdd } }) -- Damage
+            end
+            task.spawn(Damage)
+        end
+
+    end
+
     local function Action()
         local unit = sharedList.unitList[id]
         print("Actioned: " .. id, sharedList, unit.Owner)
+
+        ExecuteEffect()
+        DecreaseEffectDuration()
+        if unit == nil then return end -- Unit died by effect
 
         if unit.Owner == "ai" then
             botAction()
@@ -389,6 +518,7 @@ function module.ServerScript()
                 ["attackActionList"] = attackActionList,
                 ["unitAttackList"] = unitAttackList,
                 ["unitType"] = unitNumList,
+                ["effectNameList"] = effectName,
             }
         })
     end

@@ -116,8 +116,7 @@ function module.Init(plr)
                         send = plr,
                         receive = unitId,
                         skillList = skill,
-                        target = enemy.Id
-                        -- TODO: Add buffs / debuffs
+                        target = enemy.Id,
                     })
                     RemoveChildUI(guiInstances[6])
                 end)

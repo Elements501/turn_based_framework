@@ -31,7 +31,18 @@ Framework for a turn-based game that can be used as a base before customisation.
         (...) -- Essential Details
         skillList = {...}
     }
-    -- skill = { -3: All Attack, -2: Enemy Area Attack, -1: All Enemy Attack, 0: Summon Unit, 1: Single Attack }
+    -- skill = { -3: All Attack, -2: Enemy Area Attack, -1: All Enemy Attack, 0: Summon Unit, 1: Single Attack, 2: Single Heal, 3: All Heal }
+    ```
+- `Status Effects` uses a `.Effect: {}` list to contains all the status effect in `unitList[id]`, it is a sparse numbered list with each index meaning
+    ``` lua
+    {
+        [0] = "effectId" -- Pairs effectGui with effect in unitList; used within a unit
+        [1] = "Name", [2] = "Duration",
+        [3] = "Damage", [4] = "DamageAdd", [5] = "DamageMult",
+        [6] = "HealConst", [7] = "HealPercent", [8] = "HealAdd", [9] = "HealMult",
+        [10] = "AttackAdd", [11] = "AttackMult",
+    }
+}
     ```
 
 # Credits
