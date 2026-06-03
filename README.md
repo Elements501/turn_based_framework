@@ -5,7 +5,9 @@ Framework for a turn-based game that can be used as a base before customisation.
 - Two module scripts `Server.lua` and `Client.lua`
     - `Server` handles server-sided logic and is **OOP** for each unit
     - `Client.lua` handles client-sided logic which allows players to act
-- Two modules scripts communicate to each other (within and away) using Events
+- Two modules scripts communicate to each other (within and away) using Functions
+    > Functions are used as it yields, so Roblox does not tries to run everything at once; however, Functions can only bound one function, so a handler is created to multi-thread. <!> The output of functinos are not used yet, but can be
+
     - `ServerAction` is within `Server.lua` to tell units to act.
     ```lua
     -- ServerAction: BindableFunction (data: list)

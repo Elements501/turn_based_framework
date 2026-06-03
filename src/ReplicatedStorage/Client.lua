@@ -142,6 +142,7 @@ function module.Init(plr)
                 send = plr,
                 receive = unitId,
                 skillList = skill,
+                -- TODO: Add target = "Team Name" which spawns the unit into a team -> .Target = 0: Summon General Unit
             })
         else warn("Unknown Target Range") return end
         RemoveChildUI(guiInstances[5])

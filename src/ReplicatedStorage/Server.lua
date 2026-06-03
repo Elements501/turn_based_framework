@@ -313,13 +313,17 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
                 receive = 0,
             })
             part:Destroy()
+            -- Kill all communications
+            serverFuncList[id] = nil
+            clientFuncList[id] = nil
         end
     end
 
     local function botAction()
         -- Obtain Enemy (Player Units)
         local enemyIdList: {number} = {} -- List of enemy stats
-        for _, enemy in ipairs(sharedList.unitList) do
+        for _, enemy in pairs(sharedList.unitList) do -- Cannot ipairs() as unitList has nil holes after unit dies
+            if enemy == nil then continue end -- Dead unit has [_] = nil
             if enemy.Team ~= sharedList.unitList[id].Team then
                 table.insert(enemyIdList, enemy.Id)
             end
@@ -330,7 +334,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
         local attackAction: {} = attackActionList[attackList[rngAction]]
         if attackAction.Target == 1 then -- Single Attack
-            print("ENEMY", enemyIdList)
+            print("ENEMY", enemyIdList, sharedList.unitList)
             local randEnemyId: number = enemyIdList[math.random(1, #enemyIdList)]
             ApplyDamage({ -- Call func directly to mock player control; TODO: Change to use Events
                 action = 4,
@@ -594,7 +598,8 @@ function module.ServerScript()
             mode = -1, -- Delete
         }
 
-        sharedList.unitList[data.send] = nil
+        table.remove(sharedList.actionOrder, table.find(sharedList.actionOrder, data.send)) -- Remove order
+        sharedList.unitList[data.send] = nil -- Remove stats
         sharedList.totalUnits -= 1
     end
 
