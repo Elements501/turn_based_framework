@@ -1,8 +1,6 @@
 local module = {}
 -- Services
-local Players = game:GetService("Players")
 local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Teams = game:GetService("Teams")
 local SELF: ModuleScript = RS:WaitForChild("Server")
 
 -- Data
@@ -156,6 +154,10 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         statusBackground.ZIndex = 0
         statusBackground.LayoutOrder = 1
 
+        local UiPadding: UIPadding = Instance.new("UIPadding")
+        UiPadding.Parent = statusBackground
+        UiPadding.PaddingBottom = UDim.new(0.05, 0)
+
         local UiGridLayout: UIGridLayout = Instance.new("UIGridLayout")
         UiGridLayout.Parent = statusBackground
         UiGridLayout.Name = "UIGridLayout"
@@ -201,6 +203,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     -- })
 
     -- Unit Action
+
     local function FinishAction() -- No event
         serverAction:Invoke({
             action = 1,
@@ -310,7 +313,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
                 receive = 0,
             })
             part:Destroy()
-        return end
+        end
     end
 
     local function botAction()
@@ -327,6 +330,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
         local attackAction: {} = attackActionList[attackList[rngAction]]
         if attackAction.Target == 1 then -- Single Attack
+            print("ENEMY", enemyIdList)
             local randEnemyId: number = enemyIdList[math.random(1, #enemyIdList)]
             ApplyDamage({ -- Call func directly to mock player control; TODO: Change to use Events
                 action = 4,
@@ -401,7 +405,6 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
         ExecuteEffect()
         DecreaseEffectDuration()
-        if unit == nil then return end -- Unit died by effect
 
         if unit.Owner == "ai" then
             botAction()
@@ -461,7 +464,6 @@ function module.ServerScript()
             unitTeam = "Ememy",
             unitOwner = "ai",
         })
-        task.wait(1)
         serverAction:Invoke({
             action = 5,
             send = 0,
@@ -470,7 +472,6 @@ function module.ServerScript()
             unitTeam = "Ememy",
             unitOwner = "ai",
         })
-        task.wait(1)
         serverAction:Invoke({
             action = 5,
             send = 0,
@@ -479,7 +480,6 @@ function module.ServerScript()
             unitTeam = "Ally",
             unitOwner = "FireAlexGame",
         })
-        task.wait(1)
     end
     task.spawn(InitialiseEnemy)
 
