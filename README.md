@@ -22,7 +22,7 @@ Framework for a turn-based game that can be used as a base before customisation.
     ```lua
     -- ClientAction: RemoteFunction (data: list)
     data = {
-        action: number -- {-1: Transfer Data; 1: PlayerAct, 2: Rest, 3: AttackAction, 4: AttackTarget}
+        action: number -- {-2: Transfer Notification, -1: Transfer Data; 1: PlayerAct, 2: Rest, 3: AttackAction, 4: AttackTarget}
         send: number -- id / plr
         receive: number -- plr | plr table / id
         -- misc. data
@@ -33,7 +33,7 @@ Framework for a turn-based game that can be used as a base before customisation.
         (...) -- Essential Details
         skillList = {...}
     }
-    -- skill = { -3: All Attack, -2: Enemy Area Attack, -1: All Enemy Attack, 0: Summon Unit, 1: Single Attack, 2: Single Heal, 3: All Heal }
+    -- skillList.Target = { -3: All Attack, -2: Enemy Area Attack, -1: All Enemy Attack, 0: Summon Unit, 1: Single Attack, 2: Single Heal, 3: All Heal }
     ```
 - `Status Effects` uses a `.Effect: {}` list to contains all the status effect in `unitList[id]`, it is a sparse numbered list with each index meaning
     ``` lua
@@ -43,6 +43,9 @@ Framework for a turn-based game that can be used as a base before customisation.
         [3] = "Damage", [4] = "DamageAdd", [5] = "DamageMult",
         [6] = "HealConst", [7] = "HealPercent", [8] = "HealAdd", [9] = "HealMult",
         [10] = "AttackAdd", [11] = "AttackMult",
+        [12] = "PhysicAdd", [13] = "PhysicMult",
+        [14] = "MagicAdd", [14] = "MagicMult",
+        [15] = "EffectAdd", [16] = "EffectMult",
     }
 }
     ```

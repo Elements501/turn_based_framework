@@ -1,7 +1,7 @@
 local module = {}
 -- Services
 local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
-local SELF: ModuleScript = RS:WaitForChild("Client")
+local TWS: TweenService = game:GetService("TweenService")
 
 local clientAction: RemoteFunction = (RS:FindFirstChild("ClientAction") :: RemoteFunction?) or Instance.new("RemoteFunction")
     clientAction.Name = "ClientAction"
@@ -61,15 +61,38 @@ function module.Init(plr)
         local targetUIGrid: UIGridLayout = Instance.new("UIGridLayout")
         targetUIGrid.Parent = targetFrame
 
-        return {screenGui, passButton, attackButton, actionFrame, attackActionFrame, targetFrame}
+        local notificationFrame: Frame = Instance.new("Frame")
+        notificationFrame.Parent = screenGui
+        notificationFrame.Name = "Notification"
+        notificationFrame.Size = UDim2.fromScale(0.3, 0.5)
+        notificationFrame.Position = UDim2.fromScale(0.7, 0.5)
+        notificationFrame.BackgroundTransparency = 1
+        local UiListLayout: UIListLayout = Instance.new("UIListLayout")
+        UiListLayout.Parent = notificationFrame
+        UiListLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+        local notificationLabel: TextLabel = Instance.new("TextLabel") -- Template: no parents
+        notificationLabel.Size = UDim2.fromScale(1, 0.1)
+        notificationLabel.TextSize = 8
+        notificationLabel.TextScaled = false
+        notificationLabel.RichText = true
+
+        return {
+            [1] = screenGui,
+            [2] = passButton,
+            [3] = attackButton,
+            [4] = actionFrame,
+            [5] = attackActionFrame,
+            [6] = targetFrame,
+            [7] = notificationFrame,
+            [8] = notificationLabel,
+        }
     end
     local guiInstances: {Instance} = CreateGui()
-    local actionFrame: Frame = guiInstances[4]
 
     -- GUI Functions
     local unitId: number = 0
     guiInstances[2].Activated:Connect(function()
-        actionFrame.Visible = false
+        guiInstances[4].Visible = false
         clientAction:InvokeServer({
             action = 2,
             send = plr,
@@ -77,7 +100,7 @@ function module.Init(plr)
         })
     end)
     guiInstances[3].Activated:Connect(function()
-        actionFrame.Visible = false
+        guiInstances[4].Visible = false
         clientAction:InvokeServer({
             action = 3,
             send = plr,
@@ -88,7 +111,7 @@ function module.Init(plr)
     local function PlayerInput(data)
         local unitData = data.unitData or nil
         unitId = data.send or nil
-        actionFrame.Visible = true
+        guiInstances[4].Visible = true
 
         print("Player Received", unitId, unitData)
         -- TODO: UI Management with unitData
@@ -99,6 +122,54 @@ function module.Init(plr)
             if child:IsA("UIGridLayout") then continue end
             child:Destroy()
         end
+    end
+
+    local function DisplayNotification(data)
+        local msg = data.msg
+        if msg == nil then warn("Unknown Notification") return end
+        if msg.skill.Nature == "Effect" then return end -- No notification for effect
+
+        -- Create new notification
+        local notif: TextLabel = guiInstances[8]:Clone()
+        notif.Parent = guiInstances[7]
+
+        local function FadeOut()
+            local FADE_TIME: number = 1
+
+            local tweenInfo = TweenInfo.new(FADE_TIME, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+            local tweenEnd = {
+                BackgroundTransparency = 1,
+                TextTransparency = 1,
+                TextStrokeTransparency = 1
+            }
+
+            local fadeTween = TWS:Create(notif, tweenInfo, tweenEnd)
+            fadeTween:Play()
+
+            fadeTween.Completed:Connect(function()
+                notif:Destroy()
+            end)
+        end
+        -- TODO: If overflow, then FadeOut() the oldest one
+
+        local function Decay()
+            task.wait(5) -- Decay time
+            FadeOut()
+        end
+        task.spawn(Decay)
+
+        -- Set text
+        local function StylisedAttack()
+            notif.BorderSizePixel = 0
+            notif.BackgroundTransparency = 0.5
+            notif.BackgroundColor3 = Color3.new(1, 1, 1)
+            notif.TextColor3 = Color3.new(0, 0, 0)
+
+            notif.Text = msg.attackerName.." ("..msg.attackerId..") <font color=\"#333333\">attacked</font> "..msg.targetName.." ("..msg.targetId..") <font color=\"#333333\">with</font> "..msg.skill.Name
+        end
+
+        if msg.code == 1 then StylisedAttack()
+        else warn("Unknown Notification") return end
     end
 
     local function AttackEnemy(skill, enemyList) -- enemyList is numbered, skill is string-indexed with Name
@@ -152,7 +223,7 @@ function module.Init(plr)
         if (not data.enemyList) then warn("Missing Data") return end
 
         local skillList = {}
-        for _, i in ipairs(dataList.unitAttackList[data.Num]) do
+        for _, i in ipairs(dataList.unitAttackList[data.Type]) do
             table.insert(skillList, dataList.attackActionList[i])
         end
 
@@ -179,6 +250,7 @@ function module.Init(plr)
         if data.receive ~= plr then return end
 
         -- TODO: Create check function like executeFunction()
+        if (data.action == -2) then DisplayNotification(data) end
         if (data.action == -1) then RecieveData(data) end
         if (data.action == 1) then PlayerInput(data) end
         if (data.action == 4) then ChooseAttackTarget(data) end

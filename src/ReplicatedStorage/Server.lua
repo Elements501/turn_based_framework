@@ -1,15 +1,16 @@
 local module = {}
 -- Services
 local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PS: Players = game:GetService("Players")
 local SELF: ModuleScript = RS:WaitForChild("Server")
 
 -- Data
 local attackActionList = {
-    [1] =   { Name = "Scream",  Damage = 2,     Target = -1,    Effect = nil },
-    [2] =   { Name = "Stab",    Damage = 5,     Target = 1,     Effect = nil },
-    [3] =   { Name = "Bump",    Damage = 3,     Target = 1,     Effect = nil },
-    [4] =   { Name = "Mitosis", Damage = 2,     Target = 0,     Effect = nil },
-    [5] =   { Name = "Poison",  Damage = 1,     Target = 1,     Effect = {[1] = 1, [2] = 3, [3] = 1} }
+    [1] =   { Name = "Scream",  Damage = 2,     Nature = "Physic",  Target = -1,    Effect = nil },
+    [2] =   { Name = "Stab",    Damage = 5,     Nature = "Physic",  Target = 1,     Effect = nil },
+    [3] =   { Name = "Bump",    Damage = 3,     Nature = "Physic",  Target = 1,     Effect = nil },
+    [4] =   { Name = "Mitosis", Damage = 2,     Nature = "Magic",   Target = 0,     Effect = nil },
+    [5] =   { Name = "Poison",  Damage = 1,     Nature = "Magic",   Target = 1,     Effect = {[1] = 1, [2] = 3, [3] = 1} }
 }
 local unitAttackList = {
     [1] = {1, 2},
@@ -19,31 +20,23 @@ local unitAttackList = {
 local unitNumList = {
     [1] = {
         Name = "Goblin",
-        Num = 1,
-        Strength = 5,
-        Dexerity = 1,
-        Intelligence = 1,
-        Vitality = 3,
-        Charisma = 1,
+        Type = 1,
+        Power = 5,
+        Speed = 1,
         MaxHealth = 10,
         Health = 10,
         Effect = {}
     },
     [2] = {
         Name = "Slime",
-        Num = 2,
-        Strength = 3,
-        Dexerity = 2,
-        Intelligence = 1,
-        Vitality = 5,
-        Charisma = 1,
+        Type = 2,
+        Power = 3,
+        Speed = 2,
         MaxHealth = 20,
         Health = 20,
         Effect = {}
     },
 }
-
- -- Numbered string name for iterating effectList; not number as it will contain holes
 
 local effectName = {
     [1] = "Poison",
@@ -162,7 +155,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         UiGridLayout.Parent = statusBackground
         UiGridLayout.Name = "UIGridLayout"
         UiGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        UiGridLayout.CellPadding = UDim2.fromScale(0.05, 0.05)
+        UiGridLayout.CellPadding = UDim2.fromScale(0.02, 0.05)
         UiGridLayout.CellSize = UDim2.fromScale(0.2, 1)
 
         local effectGui: Frame = Instance.new("Frame") -- Template, no parent
@@ -217,7 +210,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         local plrOwner: Player = game:GetService("Players"):FindFirstChild(unit.Owner)
         if not plrOwner then warn("Unknown Player Action") return end
 
-        if unitAttackList[unit.Num] == nil then warn("Unknown Attack Action") return end
+        if unitAttackList[unit.Type] == nil then warn("Unknown Attack Action") return end
 
         -- Obtain Enemies
         local enemyList = {}
@@ -232,7 +225,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             send = id,
             receive = plrOwner,
             -- Skill
-            Num = unit.Num,
+            Type = unit.Type,
             enemyList = enemyList
         })
     end
@@ -267,7 +260,8 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
                 skillList = data.skillList
             })
         else warn("Unknown Target") return end
-        task.wait(1) -- TODO: Animation
+
+        task.wait(0.5) -- TODO: Animation
         FinishAction()
     end
 
@@ -295,7 +289,25 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         table.insert(sharedList.unitList[id].Effect, effect)
     end
 
-    local function TakeDamage(data)
+    local function TakeDamage(data) -- server 4
+        -- Notification
+        for _, plr in ipairs(PS:GetPlayers()) do
+            clientAction:InvokeClient(plr, {
+                action = -2,
+                send = id,
+                receive = plr,
+                msg = {
+                    code = 1,
+                    attackerId = data.send,
+                    attackerName = sharedList.unitList[data.send].Name,
+                    targetId = id,
+                    targetName = sharedList.unitList[id].Name,
+                    skill = data.skillList
+                }
+            })
+        end
+
+        if sharedList.unitList[id] == nil then return end
         -- Apply Effect
         ApplyEffect(data)
 
@@ -329,12 +341,11 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             end
         end
         -- Smart Action
-        local attackList: {number} = unitAttackList[sharedList.unitList[id].Num]
+        local attackList: {number} = unitAttackList[sharedList.unitList[id].Type]
         local rngAction: number = math.random(1, #attackList)
 
         local attackAction: {} = attackActionList[attackList[rngAction]]
         if attackAction.Target == 1 then -- Single Attack
-            print("ENEMY", enemyIdList, sharedList.unitList)
             local randEnemyId: number = enemyIdList[math.random(1, #enemyIdList)]
             ApplyDamage({ -- Call func directly to mock player control; TODO: Change to use Events
                 action = 4,
@@ -371,7 +382,6 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             --Gui
             unitUI[7][effect[0]].EffectText.Text = effect[2]
 
-            print(unitUI[7], effect)
             if effect[2] == 0 then -- Run out
                 -- Gui
                 unitUI[7][effect[0]]:Destroy()
@@ -396,7 +406,15 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
                 local DmgAdd: number = effect[4] or 0
                 local DmgMult: number = effect[5] or 0
-                serverAction:Invoke({ action = 4, send = id, receive = id, skillList = { Damage = Dmg * (DmgMult + 1) + DmgAdd } }) -- Damage
+                serverAction:Invoke({
+                    action = 4,
+                    send = id,
+                    receive = id,
+                    skillList = {
+                        Nature = "Effect",
+                        Damage = Dmg * (DmgMult + 1) + DmgAdd
+                    } -- Mask effect as skill
+                })
             end
             task.spawn(Damage)
         end
@@ -408,6 +426,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         print("Actioned: " .. id, sharedList, unit.Owner)
 
         ExecuteEffect()
+        if unit == nil then return end -- Unit died by effect
         DecreaseEffectDuration()
 
         if unit.Owner == "ai" then
@@ -487,17 +506,8 @@ function module.ServerScript()
     end
     task.spawn(InitialiseEnemy)
 
-    local function FindUnits()
-        task.wait(3) -- TEMP: Wait for all instances to load
-
-        local possibleUnits: {Instance} = game:GetService("Workspace").Game:GetChildren()
-        for _, obj in ipairs(possibleUnits) do
-            require(SELF).Init(obj, idCounter)
-            idCounter += 1
-        end
-
-        task.wait(1) -- TEMP: Wait for all instances to check in
-        -- TODO: Can get a number of total units, wait until totalUnits == #UnitNumGiven
+    local function StartGame()
+        task.wait(1) -- Wait for everything to spawn in
         serverAction:Invoke({ -- Order Units
             action = 3,
             send = 0,
@@ -509,7 +519,7 @@ function module.ServerScript()
             receive = 0,
         })
     end
-    task.spawn(FindUnits)
+    task.spawn(StartGame)
 
     -- Server Actions
     local function TransferData(data)
@@ -542,7 +552,7 @@ function module.ServerScript()
         for unitId, unitList in pairs(sharedList.unitList) do
             table.insert(dexList, {
                 Unit = unitId,
-                Dex = unitList.Dexerity
+                Dex = unitList.Speed
             })
         end
         if #dexList == 0 then warn("No Units Found") return {Error = "Order"} end
