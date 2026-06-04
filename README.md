@@ -1,12 +1,24 @@
 # Turn-based Game Framework
-Framework for a turn-based game that can be used as a base before customisation.
+Framework for a turn-based game that can be used as a base with high degrees of freedom for customisation.
+
+# Version
+**Latest stable** — `1104c39` (main)
+- Customisable units and attacks (including effects)
+- Randomised bot actions
+- Turn-based actions
+- Expanded capabilities of effects (attacks, buffs, healing)
+
+**In development**
+- Refactoring `Server.lua` into focused modules (`UnitScript`, `SharedState`, `GameData`)
 
 # Mechanism
 - Two module scripts `Server.lua` and `Client.lua`
-    - `Server` handles server-sided logic and is **OOP** for each unit
+    - `Server.lua` handles server-sided logic and is **OOP** for each unit
     - `Client.lua` handles client-sided logic which allows players to act
 - Two modules scripts communicate to each other (within and away) using Functions
-    > Functions are used as it yields, so Roblox does not tries to run everything at once; however, Functions can only bound one function, so a handler is created to multi-thread. <!> The output of functinos are not used yet, but can be
+    > Functions are used as it yields, so Roblox does not tries to run everything at once; however, Functions can only bound one function, so a handler is created to multi-thread.
+
+    > The output of functions are not used yet, but can be
 
     - `ServerAction` is within `Server.lua` to tell units to act.
     ```lua
@@ -30,14 +42,14 @@ Framework for a turn-based game that can be used as a base before customisation.
 - `ApplyDamage(): function` reads `data.skillList.Target` to communicate its action, and then expects a format in the package: set in the Data list of `attackActionList`
     ``` lua
     data = {
-        (...) -- Essential Details
         skillList = {
             Nature: "number", -- Target chooses type of effect affecting the attack: eg) {[1] = "Physical", [2] = "Magical", [3]="Effect"}
+
             Target: "number", -- skillList.Target = { -3: All Attack, -2: Enemy Area Attack, -1: All Enemy Attack, 0: Summon Unit, 1: Single Attack, 2: Ally Attack, 3: All Ally Attack, 4: Self Attack}
         }
     }
     ```
-- `Status Effects` uses a `.Effect: {}` list to contains all the status effect in `unitList[id]`, it is a sparse numbered list with each index meaning
+- `Status Effects` uses a `.Effect: {}` list to contains all the status effect in `unitList[id]`, it is a string indexed list with the following keys for mapping
     ``` lua
     {
         [0] = "effectId" -- Pairs effectGui with effect in unitList; used within a unit
@@ -50,6 +62,14 @@ Framework for a turn-based game that can be used as a base before customisation.
         [15] = "ThreeAdd", [16] = "ThreeMult",
     }
     ```
+# TODO
+- [ ] Smart bot action
+- [ ] Animation Handler
+- [ ] UI and SFX
+- [ ] Reset/Preset
+- [ ] Implement TODO target styles and effects
 
 # Credits
 - FireAlexGame
+
+VSCode to Roblox Studio using **Rojo 7.5.1**
