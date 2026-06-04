@@ -9,20 +9,15 @@ local clientAction: RemoteFunction = (RS:FindFirstChild("ClientAction") :: Remot
 local clientFuncList = {}
 
 -- Data
-local dataList = {}
+local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
+type AttackAction = GAME_DATA.AttackAction
+type EffectVariable = GAME_DATA.EffectVariable
+type UnitType = GAME_DATA.UnitType
+local attackActions: AttackAction = table.clone(GAME_DATA.attackActions)
+local effectKeys: {[number]: string} = table.clone(GAME_DATA.effectKeys)
+local unitTypes: UnitType = table.clone(GAME_DATA.unitTypes)
 
 function module.Init(plr)
-    -- Fill Data
-    clientAction:InvokeServer({
-        action = -1,
-        send = plr,
-        receive = 0,
-    })
-    local function RecieveData(data)
-        dataList = data.dataList
-        print(plr, dataList)
-    end
-
     -- GUI
     local function CreateGui(): {Instance}
         local screenGui: ScreenGui = Instance.new("ScreenGui")
@@ -244,7 +239,7 @@ function module.Init(plr)
 
         local skillList = {}
         for _, skillNum in ipairs(data.skillList) do
-            table.insert(skillList, dataList.attackActionList[skillNum])
+            table.insert(skillList, attackActions[skillNum])
         end
 
         local skillNames: {string} = {}
@@ -271,7 +266,6 @@ function module.Init(plr)
 
         -- TODO: Create check function like executeFunction()
         if (data.action == -2) then DisplayNotification(data) end
-        if (data.action == -1) then RecieveData(data) end
         if (data.action == 1) then PlayerInput(data) end
         if (data.action == 4) then ChooseAttackTarget(data) end
     end

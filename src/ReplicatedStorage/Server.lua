@@ -5,104 +5,13 @@ local PS: Players = game:GetService("Players")
 local SELF: ModuleScript = RS:WaitForChild("Server")
 
 -- Data
-local attackActionList = {
-    [1] = {
-        Name = "Scream",
-        Damage = 2,
-        Nature = 1,
-        Target = -1,
-        Effect = nil
-    },
-    [2] = {
-        Name = "Stab",
-        Damage = 5,
-        Nature = 1,
-        Target = 1,
-        Effect = nil
-    },
-    [3] = {
-        Name = "Bump",
-        Damage = 3,
-        Nature = 1,
-        Target = 1,
-        Effect = nil
-    },
-    [4] = {
-        Name = "Heal",
-        Damage = -2,
-        Nature = 2,
-        Target = 2,
-        Effect = { Name = "Regeneration", Duration = 2, HealConst = 1 }
-    },
-    [5] = {
-        Name = "Poison",
-        Damage = 1,
-        Nature = 2,
-        Target = 1,
-        Effect = { Name = "Poison", Duration = 3, Damage = 1 }
-    },
-    [6] = {
-        Name = "Mitosis",
-        Damage = 2,
-        Nature = 2,
-        Target = 0,
-        Effect = nil
-    },
-}
-
-local effectVar = {
-    [0] = "effectId",
-    [1] = "Name", [2] = "Duration",
-    [3] = "Damage", [4] = "DamageAdd", [5] = "DamageMult",
-    [6] = "HealConst", [7] = "HealPercent", [8] = "HealAdd", [9] = "HealMult",
-    [10] = "AttackAdd", [11] = "AttackMult",
-    [12] = "OneAdd", [13] = "OneMult",
-    [14] = "TwoAdd", [15] = "TwoMult",
-    [16] = "ThreeAdd", [17] = "ThreeMult",
-}
-
-local unitNumList = {
-    [1] = {
-        Name = "Goblin",
-        Type = 1,
-        Power = 5,
-        Speed = 1,
-        MaxHealth = 10,
-        Health = 10,
-        Effect = {},
-        Skills = {1, 2}
-    },
-    [2] = {
-        Name = "Slime",
-        Type = 2,
-        Power = 3,
-        Speed = 2,
-        MaxHealth = 20,
-        Health = 20,
-        Effect = {},
-        Skills = {3, 6}
-    },
-    [3] = {
-        Name = "Spider",
-        Type = 3,
-        Power = 5,
-        Speed = 2,
-        MaxHealth = 8,
-        Health = 8,
-        Effect = {},
-        Skills = {3, 5}
-    },
-    [4] = {
-        Name = "Spirit",
-        Type = 4,
-        Power = 2,
-        Speed = 5,
-        MaxHealth = 8,
-        Health = 8,
-        Effect = {[1] = { Name = "Spirit Mending", Duration = 99, HealConst = 0.5, HealMult = 1.5, },},
-        Skills = {1, 4}
-    },
-}
+local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
+type AttackAction = GAME_DATA.AttackAction
+type EffectVariable = GAME_DATA.EffectVariable
+type UnitType = GAME_DATA.UnitType
+local attackActions: AttackAction = table.clone(GAME_DATA.attackActions)
+local effectKeys: {[number]: string} = table.clone(GAME_DATA.effectKeys)
+local unitTypes: UnitType = table.clone(GAME_DATA.unitTypes)
 
 -- Variables
 local sharedList = {
@@ -138,7 +47,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     -- Initialisation
     local function updateList(): boolean -- Check in onto the sharedList as a Unit
         -- Check In
-        local baseStat = unitNumList[metadata.unitTypeNum]
+        local baseStat = unitTypes[metadata.unitTypeNum]
         if not baseStat then warn("Unknown unitTypeNum", metadata and metadata.unitTypeNum) return false end
 
         local unitData = {}
@@ -340,15 +249,15 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         local effectTemplate: Frame = unitUI[6]
 
         local newEffect: Frame = effectTemplate:Clone()
-        newEffect.Name = effect[effectVar[1]]
+        newEffect.Name = effect[effectKeys[1]]
         newEffect.Parent = effectFrame
 
-        newEffect.EffectText.Text = effect[effectVar[2]]
+        newEffect.EffectText.Text = effect[effectKeys[2]]
         -- TODO: Set newEffect.EffectImage
 
         -- Add effect into the list
         if next(unit.Effect) == nil then unit.Effect = {} end -- Init .Effect table
-        effect[effectVar[0]] = effectId -- Give unique effectId
+        effect[effectKeys[0]] = effectId -- Give unique effectId
         unitUI[7][effectId] = newEffect
         effectId += 1
         -- Prevent double insertion in .Effect
@@ -390,37 +299,37 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         end
 
         if damage >= 0 then -- Dealing damage
-            local attackAdd = GetEffect(effectVar[10]) or 0
-            local attackMult = GetEffect(effectVar[11]) or 1
+            local attackAdd = GetEffect(effectKeys[10]) or 0
+            local attackMult = GetEffect(effectKeys[11]) or 1
             local Add: number; local Mult: number
 
             if nature == 1 then
-                Add = GetEffect(effectVar[12]) or 0; Mult = GetEffect(effectVar[13]) or 1
+                Add = GetEffect(effectKeys[12]) or 0; Mult = GetEffect(effectKeys[13]) or 1
                 unit.Health -= ( damage + attackAdd + Add ) * (1 + unit.Power / 100) * attackMult * Mult
             elseif nature == 2 then
-                Add = GetEffect(effectVar[14]) or 0; Mult = GetEffect(effectVar[15]) or 1
+                Add = GetEffect(effectKeys[14]) or 0; Mult = GetEffect(effectKeys[15]) or 1
                 unit.Health -= ( damage + attackAdd + Add ) * (1 + 0 / 100) * attackMult * Mult -- TODO: Stats that replace 0
             elseif nature == 3 then
-                Add = GetEffect(effectVar[16]) or 0; Mult = GetEffect(effectVar[17]) or 1
+                Add = GetEffect(effectKeys[16]) or 0; Mult = GetEffect(effectKeys[17]) or 1
                 unit.Health -= ( damage + attackAdd + Add ) * (1 + 0 / 100) * attackMult * Mult
             end
         elseif damage < 0 then -- Doing healing
             local heal = -damage
-            local healPerc = GetEffect(effectVar[7]) or 0
-            local healAdd = GetEffect(effectVar[8]) or 0
-            local healMult = GetEffect(effectVar[9]) or 1
+            local healPerc = GetEffect(effectKeys[7]) or 0
+            local healAdd = GetEffect(effectKeys[8]) or 0
+            local healMult = GetEffect(effectKeys[9]) or 1
             local Add: number; local Mult: number
 
             if nature == 1 then
-                Add = GetEffect(effectVar[12]) or 0; Mult = GetEffect(effectVar[13]) or 1
+                Add = GetEffect(effectKeys[12]) or 0; Mult = GetEffect(effectKeys[13]) or 1
                 unit.Health += ( heal + healAdd + Add ) * (1 + unit.Power / 100) * healMult * Mult
                 unit.Health *= ( 1 + healPerc )
             elseif nature == 2 then
-                Add = GetEffect(effectVar[14]) or 0; Mult = GetEffect(effectVar[15]) or 1
+                Add = GetEffect(effectKeys[14]) or 0; Mult = GetEffect(effectKeys[15]) or 1
                 unit.Health += ( heal + healAdd + Add ) * (1 + 0 / 100) * healMult * Mult
                 unit.Health *= ( 1 + healPerc )
             elseif nature == 3 then
-                Add = GetEffect(effectVar[16]) or 0; Mult = GetEffect(effectVar[17]) or 1
+                Add = GetEffect(effectKeys[16]) or 0; Mult = GetEffect(effectKeys[17]) or 1
                 unit.Health += ( heal + healAdd + Add ) * (1 + 0 / 100) * healMult * Mult
                 unit.Health *= ( 1 + healPerc )
             end
@@ -470,7 +379,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         local attackList: {number} = unit.Skills
         local rngAction: number = math.random(1, #attackList)
 
-        local attackAction: {} = attackActionList[attackList[rngAction]]
+        local attackAction: {} = attackActions[attackList[rngAction]]
         if attackAction.Target == 1 then -- Single Attack
             local randEnemyId: number = enemyIdList[math.random(1, #enemyIdList)]
             ApplyDamage({ -- Call func directly to mock player control; TODO: Change to use Events
@@ -515,19 +424,19 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             if not effect then continue end -- effect is nil. Sparse list is not processed
 
             -- Pre-existing Effects
-            if effect[effectVar[0]] == nil then
+            if effect[effectKeys[0]] == nil then
                 ApplyEffect({selfApply = true, skillList = {Effect = effect}}) -- Mock effect is applied by attack
             end
 
             -- List
-            effect[effectVar[2]] -= 1 -- TODO: effect[2] == -1 for infinite duration
+            effect[effectKeys[2]] -= 1 -- TODO: effect[2] == -1 for infinite duration
             --Gui
-            unitUI[7][ effect[effectVar[0]] ].EffectText.Text = effect[effectVar[2]]
+            unitUI[7][ effect[effectKeys[0]] ].EffectText.Text = effect[effectKeys[2]]
 
-            if effect[ effectVar[2] ] == 0 then -- Run out
+            if effect[ effectKeys[2] ] == 0 then -- Run out
                 -- Gui
-                unitUI[7][ effect[ effectVar[0]] ]:Destroy()
-                unitUI[7][ effect[ effectVar[0]] ] = nil -- Create sparse list
+                unitUI[7][ effect[ effectKeys[0]] ]:Destroy()
+                unitUI[7][ effect[ effectKeys[0]] ] = nil -- Create sparse list
                 -- List
                 effectList[effectNumber] = nil
             end
@@ -539,11 +448,11 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         if not next(effectList) then return end
 
         for _, effect in ipairs(effectList) do
-            if effect[effectVar[2]] <= 0 then effect[effectVar[2]] = 0 return end
+            if effect[effectKeys[2]] <= 0 then effect[effectKeys[2]] = 0 return end
             print("Effect Executed", id, effect)
 
             local function Damage()
-                local Dmg: number | nil = effect[effectVar[3]]
+                local Dmg: number | nil = effect[effectKeys[3]]
                 if Dmg == nil then return end
 
                 serverAction:Invoke({
@@ -559,8 +468,8 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             task.spawn(Damage)
 
             local function Heal() -- Separate from Damage: process effect with both [3] and [6]
-                local heal: number | nil = effect[effectVar[6]]
-                if heal == nil and effect[effectVar[7]] == nil then return end
+                local heal: number | nil = effect[effectKeys[6]]
+                if heal == nil and effect[effectKeys[7]] == nil then return end
 
                 serverAction:Invoke({
                     action = 4,
@@ -642,14 +551,14 @@ function module.ServerScript()
             unitTeam = "Ememy",
             unitOwner = "ai",
         })
-        -- serverAction:Invoke({
-        --     action = 5,
-        --     send = 0,
-        --     receive = 0,
-        --     unitTypeNum = 2,
-        --     unitTeam = "Ememy",
-        --     unitOwner = "ai",
-        -- })
+        serverAction:Invoke({
+            action = 5,
+            send = 0,
+            receive = 0,
+            unitTypeNum = 2,
+            unitTeam = "Ememy",
+            unitOwner = "ai",
+        })
         serverAction:Invoke({
             action = 5,
             send = 0,
@@ -685,21 +594,7 @@ function module.ServerScript()
     task.spawn(StartGame)
 
     -- Server Actions
-    local function TransferData(data)
-        if ( not data.send:IsA("Player") ) then warn("Wrong Data Passed") end -- data.send should be Player, special
-        clientAction:InvokeClient(data.send, {
-            action = -1,
-            send = 0,
-            receive = data.send,
-            dataList = {
-                ["attackActionList"] = attackActionList,
-                ["effectVar"] = effectVar,
-                ["unitNumList"] = unitNumList,
-            }
-        })
-    end
-
-     local function OrderUnits(data)
+    local function OrderUnits(data)
         local function DecreaseOrder() -- To prevent skip over next unit
             local unitId: number = data.unit
             if unitId == nil then warn("Unknown Unit Deleted") return end
@@ -786,7 +681,7 @@ function module.ServerScript()
         end
         if unitNum == nil then warn("Unknown Unit Number: ", data) return end
 
-        if unitNumList[unitNum] == nil then warn("Out of Range: ", unitNum) return end -- No unit existed in list
+        if unitTypes[unitNum] == nil then warn("Out of Range: ", unitNum) return end -- No unit existed in list
 
         local unitTeam = data.unitTeam or sharedList.unitList[data.send].Team -- Summoned: .Team (same team); Server: .unitTeam
         if unitTeam == nil then warn("Unknown Team") return end
@@ -845,9 +740,7 @@ function module.ServerScript()
                     if type(result) == table then if result.Error then warn(result.Error) end end
                 end)
             end
-
-            if (data.action == -1) then executeFunction(TransferData) end
-
+            -- No active Client -> Server functions yet
         elseif clientFuncList[data.receive] then -- Unit
             clientFuncList[data.receive](data)
         end

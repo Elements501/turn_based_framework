@@ -22,7 +22,7 @@ Framework for a turn-based game that can be used as a base before customisation.
     ```lua
     -- ClientAction: RemoteFunction (data: list)
     data = {
-        action: number -- {-2: Transfer Notification, -1: Transfer Data; 1: PlayerAct, 2: Rest, 3: AttackAction, 4: AttackTarget}
+        action: number -- {-2: Transfer Notification, -1: (DEP); 1: PlayerAct, 2: Rest, 3: AttackAction, 4: AttackTarget}
         send: number -- id / plr
         receive: number -- plr | plr table / id
         -- misc. data
