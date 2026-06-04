@@ -97,9 +97,9 @@ local unitNumList = {
         Type = 4,
         Power = 2,
         Speed = 5,
-        MaxHealth = 30,
-        Health = 30,
-        Effect = {},
+        MaxHealth = 8,
+        Health = 8,
+        Effect = {[1] = { Name = "Spirit Mending", Duration = 99, HealConst = 0.5, HealMult = 1.5, },},
         Skills = {1, 4}
     },
 }
@@ -351,7 +351,8 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         effect[effectVar[0]] = effectId -- Give unique effectId
         unitUI[7][effectId] = newEffect
         effectId += 1
-        table.insert(unit.Effect, effect)
+        -- Prevent double insertion in .Effect
+        if not data.selfApply then table.insert(unit.Effect, effect) end -- Self apply does not have .Damage
     end
 
     local function TakeDamage(data) -- server 4
@@ -379,48 +380,50 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         -- Calculate damage taken; TODO: Resistance + Critical + Vulnerability
         local damage: number | nil = data.skillList.Damage
         local nature: number | nil = data.skillList.Nature
-        print(id, "Take Damage", damage)
+
+        local function GetEffect(key: string): number?
+            local num: number? = nil
+            for _, effect in pairs(unit.Effect) do
+                if effect and effect[key] then num = (num or 0) + effect[key] end
+            end
+            return num
+        end
+
         if damage >= 0 then -- Dealing damage
-            local attackAdd: number = unit.Effect[effectVar[10]] or 0
-            local attackMult: number = unit.Effect[effectVar[11]] or 1
+            local attackAdd = GetEffect(effectVar[10]) or 0
+            local attackMult = GetEffect(effectVar[11]) or 1
+            local Add: number; local Mult: number
 
             if nature == 1 then
-                local Add: number = unit.Effect[effectVar[12]] or 0
-                local Mult: number = unit.Effect[effectVar[13]] or 1
+                Add = GetEffect(effectVar[12]) or 0; Mult = GetEffect(effectVar[13]) or 1
                 unit.Health -= ( damage + attackAdd + Add ) * (1 + unit.Power / 100) * attackMult * Mult
             elseif nature == 2 then
-                local Add: number = unit.Effect[effectVar[14]] or 0
-                local Mult: number = unit.Effect[effectVar[15]] or 1
+                Add = GetEffect(effectVar[14]) or 0; Mult = GetEffect(effectVar[15]) or 1
                 unit.Health -= ( damage + attackAdd + Add ) * (1 + 0 / 100) * attackMult * Mult -- TODO: Stats that replace 0
             elseif nature == 3 then
-                local Add: number = unit.Effect[effectVar[16]] or 0
-                local Mult: number = unit.Effect[effectVar[17]] or 1
-                unit.Health -= ( damage + attackAdd + Add ) * (1 + 0 / 100)* attackMult * Mult
+                Add = GetEffect(effectVar[16]) or 0; Mult = GetEffect(effectVar[17]) or 1
+                unit.Health -= ( damage + attackAdd + Add ) * (1 + 0 / 100) * attackMult * Mult
             end
         elseif damage < 0 then -- Doing healing
-            local heal: number | nil = -damage or 0
-
-            local healPerc: number = unit.Effect[effectVar[7]] or 0
-            local healAdd: number = unit.Effect[effectVar[8]] or 0
-            local healMult: number = unit.Effect[effectVar[9]] or 1
+            local heal = -damage
+            local healPerc = GetEffect(effectVar[7]) or 0
+            local healAdd = GetEffect(effectVar[8]) or 0
+            local healMult = GetEffect(effectVar[9]) or 1
+            local Add: number; local Mult: number
 
             if nature == 1 then
-                local Add: number = unit.Effect[effectVar[12]] or 0
-                local Mult: number = unit.Effect[effectVar[13]] or 1
+                Add = GetEffect(effectVar[12]) or 0; Mult = GetEffect(effectVar[13]) or 1
                 unit.Health += ( heal + healAdd + Add ) * (1 + unit.Power / 100) * healMult * Mult
                 unit.Health *= ( 1 + healPerc )
             elseif nature == 2 then
-                local Add: number = unit.Effect[effectVar[14]] or 0
-                local Mult: number = unit.Effect[effectVar[15]] or 1
+                Add = GetEffect(effectVar[14]) or 0; Mult = GetEffect(effectVar[15]) or 1
                 unit.Health += ( heal + healAdd + Add ) * (1 + 0 / 100) * healMult * Mult
                 unit.Health *= ( 1 + healPerc )
             elseif nature == 3 then
-                local Add: number = unit.Effect[effectVar[16]] or 0
-                local Mult: number = unit.Effect[effectVar[17]] or 1
+                Add = GetEffect(effectVar[16]) or 0; Mult = GetEffect(effectVar[17]) or 1
                 unit.Health += ( heal + healAdd + Add ) * (1 + 0 / 100) * healMult * Mult
                 unit.Health *= ( 1 + healPerc )
             end
-
         end
         unit.Health = math.round(unit.Health * 10) / 10
         if unit.Health > unit.MaxHealth then
@@ -430,7 +433,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
         -- Update Gui
         unitUI[4].Text = unit.Health .. " / " .. unit.MaxHealth
-        unitUI[3].Size = UDim2.fromScale(unit.Health / unit.MaxHealth, unitUI[3].Size.Y.Scale)
+        unitUI[3].Size = UDim2.fromScale(unit.Health / unit.MaxHealth * 0.96, unitUI[3].Size.Y.Scale)
 
         if unit.Health <= 0 then
             serverAction:Invoke({
@@ -508,12 +511,12 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         local effectList: {} = unit.Effect
         if not next(effectList) then return end -- If effectList is {}
 
-        for effectNumber, effect in pairs(effectList) do -- effect is by reference, so can change .Effect'
+        for effectNumber, effect in pairs(effectList) do
             if not effect then continue end -- effect is nil. Sparse list is not processed
 
             -- Pre-existing Effects
             if effect[effectVar[0]] == nil then
-                ApplyEffect({skillList = {Effect = effect}}) -- Mock effect is applied by attack
+                ApplyEffect({selfApply = true, skillList = {Effect = effect}}) -- Mock effect is applied by attack
             end
 
             -- List
@@ -575,7 +578,6 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     end
 
     local function Action()
-        local unit = unit
         print("Actioned: " .. id, sharedList, unit.Owner)
 
         ExecuteEffect()
@@ -648,14 +650,14 @@ function module.ServerScript()
         --     unitTeam = "Ememy",
         --     unitOwner = "ai",
         -- })
-        -- serverAction:Invoke({
-        --     action = 5,
-        --     send = 0,
-        --     receive = 0,
-        --     unitTypeNum = 3,
-        --     unitTeam = "Ally",
-        --     unitOwner = "FireAlexGame",
-        -- })
+        serverAction:Invoke({
+            action = 5,
+            send = 0,
+            receive = 0,
+            unitTypeNum = 3,
+            unitTeam = "Ally",
+            unitOwner = "FireAlexGame",
+        })
         serverAction:Invoke({
             action = 5,
             send = 0,
