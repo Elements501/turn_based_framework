@@ -17,6 +17,10 @@ local attackActions: AttackAction = table.clone(GAME_DATA.attackActions)
 local effectKeys: {[number]: string} = table.clone(GAME_DATA.effectKeys)
 local unitTypes: UnitType = table.clone(GAME_DATA.unitTypes)
 
+-- Shared
+local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
+local sharedList: SHARED_LIST.SharedList = SHARED_LIST
+
 function module.Init(plr)
     -- GUI
     local function CreateGui(): {Instance}

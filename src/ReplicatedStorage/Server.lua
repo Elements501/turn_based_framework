@@ -13,16 +13,9 @@ local attackActions: AttackAction = table.clone(GAME_DATA.attackActions)
 local effectKeys: {[number]: string} = table.clone(GAME_DATA.effectKeys)
 local unitTypes: UnitType = table.clone(GAME_DATA.unitTypes)
 
--- Variables
-local sharedList = {
-    -- Units
-    totalUnits = 0,
-    unitList = {},
-    -- Rounds
-    roundNumber = 0,
-    actionOrder = {}, -- Down the id number
-    actionNumber = 1, -- Which unit gets to act
-}
+-- Shared
+local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
+local sharedList: SHARED_LIST.SharedList = SHARED_LIST
 
 local serverAction: BindableFunction = (RS:FindFirstChild("ServerAction") :: BindableFunction?) or Instance.new("BindableFunction")
     serverAction.Name = "ServerAction"

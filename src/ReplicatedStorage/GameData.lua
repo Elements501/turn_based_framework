@@ -1,3 +1,4 @@
+--!strict
 export type EffectVariable = {
     EffectId: number?,
     Name: string,
