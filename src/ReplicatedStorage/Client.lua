@@ -127,7 +127,7 @@ function module.Init(plr)
     local function DisplayNotification(data)
         local msg = data.msg
         if msg == nil then warn("Unknown Notification") return end
-        if msg.skill.Nature == "Effect" then return end -- No notification for effect
+        if msg.skill.Nature == 3 then return end -- No notification for 3: effect
 
         -- Create new notification
         local notif: TextLabel = guiInstances[8]:Clone()
@@ -172,7 +172,7 @@ function module.Init(plr)
         else warn("Unknown Notification") return end
     end
 
-    local function AttackEnemy(skill, enemyList) -- enemyList is numbered, skill is string-indexed with Name
+    local function AttackEnemy(skill, enemyList, allyList) -- enemyList is numbered, skill is string-indexed with Name
         if skill.Target == 1 then -- Single Attack
             for _, enemy in ipairs(enemyList) do
                 local button: TextButton = Instance.new("TextButton")
@@ -193,7 +193,27 @@ function module.Init(plr)
                 end)
             end
             guiInstances[6].Visible = true
-        elseif skill.Target == -1  then -- Area Attack
+        elseif skill.Target == 2 then
+            for _, ally in ipairs(allyList) do
+                local button: TextButton = Instance.new("TextButton")
+                button.Parent = guiInstances[6]
+                button.Text = ally.Name
+                button.Size = UDim2.fromScale(0.1, 1)
+
+                button.Activated:Connect(function()
+                    guiInstances[6].Visible = false
+                    clientAction:InvokeServer({
+                        action = 4,
+                        send = plr,
+                        receive = unitId,
+                        skillList = skill,
+                        target = ally.Id,
+                    })
+                    RemoveChildUI(guiInstances[6])
+                end)
+            end
+            guiInstances[6].Visible = true
+        elseif skill.Target == -1 then -- Area Attack
             -- Get enemy Id
             local targetIdList = {}
             for _, enemy in ipairs(enemyList) do
@@ -219,12 +239,12 @@ function module.Init(plr)
         RemoveChildUI(guiInstances[5])
     end
 
-    local function ChooseAttackTarget(data)
-        if (not data.enemyList) then warn("Missing Data") return end
+    local function ChooseAttackTarget(data) -- client 4
+        if not (data.allyList and data.enemyList and data.skillList) then warn("Missing Data") return end
 
         local skillList = {}
-        for _, i in ipairs(dataList.unitAttackList[data.Type]) do
-            table.insert(skillList, dataList.attackActionList[i])
+        for _, skillNum in ipairs(data.skillList) do
+            table.insert(skillList, dataList.attackActionList[skillNum])
         end
 
         local skillNames: {string} = {}
@@ -237,7 +257,7 @@ function module.Init(plr)
             button.Size = UDim2.fromScale(0.1, 1)
 
             button.Activated:Connect(function()
-                AttackEnemy(skillList[num], data.enemyList) -- skillList and skillNames must line up
+                AttackEnemy(skillList[num], data.enemyList, data.allyList) -- skillList and skillNames must line up
                 guiInstances[5].Visible = false
                 return
             end)

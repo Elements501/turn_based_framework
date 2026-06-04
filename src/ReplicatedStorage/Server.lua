@@ -6,15 +6,59 @@ local SELF: ModuleScript = RS:WaitForChild("Server")
 
 -- Data
 local attackActionList = {
-    [1] =   { Name = "Scream",  Damage = 2,     Nature = "Physic",  Target = -1,    Effect = nil },
-    [2] =   { Name = "Stab",    Damage = 5,     Nature = "Physic",  Target = 1,     Effect = nil },
-    [3] =   { Name = "Bump",    Damage = 3,     Nature = "Physic",  Target = 1,     Effect = nil },
-    [4] =   { Name = "Mitosis", Damage = 2,     Nature = "Magic",   Target = 0,     Effect = nil },
-    [5] =   { Name = "Poison",  Damage = 1,     Nature = "Magic",   Target = 1,     Effect = {[1] = 1, [2] = 3, [3] = 1} }
+    [1] = {
+        Name = "Scream",
+        Damage = 2,
+        Nature = 1,
+        Target = -1,
+        Effect = nil
+    },
+    [2] = {
+        Name = "Stab",
+        Damage = 5,
+        Nature = 1,
+        Target = 1,
+        Effect = nil
+    },
+    [3] = {
+        Name = "Bump",
+        Damage = 3,
+        Nature = 1,
+        Target = 1,
+        Effect = nil
+    },
+    [4] = {
+        Name = "Heal",
+        Damage = -2,
+        Nature = 2,
+        Target = 2,
+        Effect = { Name = "Regeneration", Duration = 2, HealConst = 1 }
+    },
+    [5] = {
+        Name = "Poison",
+        Damage = 1,
+        Nature = 2,
+        Target = 1,
+        Effect = { Name = "Poison", Duration = 3, Damage = 1 }
+    },
+    [6] = {
+        Name = "Mitosis",
+        Damage = 2,
+        Nature = 2,
+        Target = 0,
+        Effect = nil
+    },
 }
-local unitAttackList = {
-    [1] = {1, 2},
-    [2] = {3, 4, 5},
+
+local effectVar = {
+    [0] = "effectId",
+    [1] = "Name", [2] = "Duration",
+    [3] = "Damage", [4] = "DamageAdd", [5] = "DamageMult",
+    [6] = "HealConst", [7] = "HealPercent", [8] = "HealAdd", [9] = "HealMult",
+    [10] = "AttackAdd", [11] = "AttackMult",
+    [12] = "OneAdd", [13] = "OneMult",
+    [14] = "TwoAdd", [15] = "TwoMult",
+    [16] = "ThreeAdd", [17] = "ThreeMult",
 }
 
 local unitNumList = {
@@ -25,7 +69,8 @@ local unitNumList = {
         Speed = 1,
         MaxHealth = 10,
         Health = 10,
-        Effect = {}
+        Effect = {},
+        Skills = {1, 2}
     },
     [2] = {
         Name = "Slime",
@@ -34,15 +79,29 @@ local unitNumList = {
         Speed = 2,
         MaxHealth = 20,
         Health = 20,
-        Effect = {}
+        Effect = {},
+        Skills = {3, 6}
     },
-}
-
-local effectName = {
-    [1] = "Poison",
-    [2] = "Regeneration",
-    [3] = "Adernaline",
-    [4] = "Rage",
+    [3] = {
+        Name = "Spider",
+        Type = 3,
+        Power = 5,
+        Speed = 2,
+        MaxHealth = 8,
+        Health = 8,
+        Effect = {},
+        Skills = {3, 5}
+    },
+    [4] = {
+        Name = "Spirit",
+        Type = 4,
+        Power = 2,
+        Speed = 5,
+        MaxHealth = 30,
+        Health = 30,
+        Effect = {},
+        Skills = {1, 4}
+    },
 }
 
 -- Variables
@@ -55,7 +114,6 @@ local sharedList = {
     actionOrder = {}, -- Down the id number
     actionNumber = 1, -- Which unit gets to act
 }
-
 
 local serverAction: BindableFunction = (RS:FindFirstChild("ServerAction") :: BindableFunction?) or Instance.new("BindableFunction")
     serverAction.Name = "ServerAction"
@@ -76,6 +134,7 @@ function module.Init(part: Instance, data: {} | nil, id: number) -- Remove part 
 end
 
 function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
+    local unit: {} = sharedList.unitList[id]
     -- Initialisation
     local function updateList(): boolean -- Check in onto the sharedList as a Unit
         -- Check In
@@ -90,7 +149,8 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         unitData.Owner = metadata.Owner
         unitData.Id = id
 
-        sharedList.unitList[id] = unitData
+        sharedList.unitList[id] = unitData -- sharedList.unitList[id] shares same address as unit, now unit can edit sharedList.unitList[id]
+        unit = unitData
         sharedList.totalUnits += 1
 
         print(sharedList.unitList)
@@ -131,7 +191,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
         local hpBarText: TextLabel = Instance.new("TextLabel")
         hpBarText.Parent = hpBarBackground
-        hpBarText.Text = sharedList.unitList[id].Health .. " / " .. sharedList.unitList[id].MaxHealth
+        hpBarText.Text = unit.Health .. " / " .. unit.MaxHealth
         hpBarText.TextColor3 = Color3.new(0.5, 0.5, 0.5)
         hpBarText.Size = UDim2.fromScale(1, 1)
         hpBarText.TextScaled = true
@@ -206,18 +266,22 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     end
 
     local function AttackAction()
-        local unit = sharedList.unitList[id]
         local plrOwner: Player = game:GetService("Players"):FindFirstChild(unit.Owner)
         if not plrOwner then warn("Unknown Player Action") return end
 
-        if unitAttackList[unit.Type] == nil then warn("Unknown Attack Action") return end
+        if unit.Skills == nil then warn("Unknown Attack Action") return end
 
-        -- Obtain Enemies
         local enemyList = {}
+        local allyList = {}
+        -- Obtain Enemies
         for _, unitChecked in pairs(sharedList.unitList) do
             if unitChecked.Team == unit.Team then continue end
-            local enemy: {} = unitChecked
-            table.insert(enemyList, enemy)
+            table.insert(enemyList, unitChecked)
+        end
+        -- Obtain Allies
+        for _, unitChecked in pairs(sharedList.unitList) do
+            if unitChecked.Team ~= unit.Team then continue end
+            table.insert(allyList, unitChecked)
         end
 
         clientAction:InvokeClient(plrOwner, {
@@ -226,18 +290,19 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             receive = plrOwner,
             -- Skill
             Type = unit.Type,
-            enemyList = enemyList
+            enemyList = enemyList,
+            allyList = allyList,
+            skillList = unit.Skills,
         })
     end
 
     local function ApplyDamage(data)
         print("Attack Used: ", data.skillList, "; On unit:", data.target)
-        if data.skillList.Target == 1 then -- Single Attack
+        if data.skillList.Target == 1 or data.skillList.Target == 2 then -- Single or Ally Attack
             serverAction:Invoke({
                 action = 4,
                 send = id,
                 receive = data.target,
-                -- Extra
                 skillList = data.skillList,
             })
         elseif data.skillList.Target == -1 then -- Area Attack
@@ -265,7 +330,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         FinishAction()
     end
 
-    local effectId: number = 0
+    local effectId: number = 1
     local function ApplyEffect(data) -- No event
         local effect: {} = data.skillList.Effect or nil
         if effect == nil then return end -- Attack has no effect
@@ -275,18 +340,18 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         local effectTemplate: Frame = unitUI[6]
 
         local newEffect: Frame = effectTemplate:Clone()
-        newEffect.Name = effectName[effect[1]]
+        newEffect.Name = effect[effectVar[1]]
         newEffect.Parent = effectFrame
 
-        newEffect.EffectText.Text = effect[2]
+        newEffect.EffectText.Text = effect[effectVar[2]]
         -- TODO: Set newEffect.EffectImage
 
         -- Add effect into the list
-        if next(sharedList.unitList[id].Effect) == nil then sharedList.unitList[id].Effect = {} end -- Init .Effect table
-        effect[0] = effectId -- Give unique effectId
+        if next(unit.Effect) == nil then unit.Effect = {} end -- Init .Effect table
+        effect[effectVar[0]] = effectId -- Give unique effectId
         unitUI[7][effectId] = newEffect
         effectId += 1
-        table.insert(sharedList.unitList[id].Effect, effect)
+        table.insert(unit.Effect, effect)
     end
 
     local function TakeDamage(data) -- server 4
@@ -301,24 +366,73 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
                     attackerId = data.send,
                     attackerName = sharedList.unitList[data.send].Name,
                     targetId = id,
-                    targetName = sharedList.unitList[id].Name,
+                    targetName = unit.Name,
                     skill = data.skillList
                 }
             })
         end
 
-        if sharedList.unitList[id] == nil then return end
+        if unit == nil then return end
         -- Apply Effect
         ApplyEffect(data)
 
         -- Calculate damage taken; TODO: Resistance + Critical + Vulnerability
-        print(id, "Take Damage", data.skillList.Damage)
-        sharedList.unitList[id].Health -= data.skillList.Damage -- TODO: Calculate Buffs / Debuffs
-        -- Update Gui
-        unitUI[4].Text = sharedList.unitList[id].Health .. " / " .. sharedList.unitList[id].MaxHealth
-        unitUI[3].Size = UDim2.fromScale(sharedList.unitList[id].Health / sharedList.unitList[id].MaxHealth, unitUI[3].Size.Y.Scale)
+        local damage: number | nil = data.skillList.Damage
+        local nature: number | nil = data.skillList.Nature
+        print(id, "Take Damage", damage)
+        if damage >= 0 then -- Dealing damage
+            local attackAdd: number = unit.Effect[effectVar[10]] or 0
+            local attackMult: number = unit.Effect[effectVar[11]] or 1
 
-        if sharedList.unitList[id].Health <= 0 then
+            if nature == 1 then
+                local Add: number = unit.Effect[effectVar[12]] or 0
+                local Mult: number = unit.Effect[effectVar[13]] or 1
+                unit.Health -= ( damage + attackAdd + Add ) * (1 + unit.Power / 100) * attackMult * Mult
+            elseif nature == 2 then
+                local Add: number = unit.Effect[effectVar[14]] or 0
+                local Mult: number = unit.Effect[effectVar[15]] or 1
+                unit.Health -= ( damage + attackAdd + Add ) * (1 + 0 / 100) * attackMult * Mult -- TODO: Stats that replace 0
+            elseif nature == 3 then
+                local Add: number = unit.Effect[effectVar[16]] or 0
+                local Mult: number = unit.Effect[effectVar[17]] or 1
+                unit.Health -= ( damage + attackAdd + Add ) * (1 + 0 / 100)* attackMult * Mult
+            end
+        elseif damage < 0 then -- Doing healing
+            local heal: number | nil = -damage or 0
+
+            local healPerc: number = unit.Effect[effectVar[7]] or 0
+            local healAdd: number = unit.Effect[effectVar[8]] or 0
+            local healMult: number = unit.Effect[effectVar[9]] or 1
+
+            if nature == 1 then
+                local Add: number = unit.Effect[effectVar[12]] or 0
+                local Mult: number = unit.Effect[effectVar[13]] or 1
+                unit.Health += ( heal + healAdd + Add ) * (1 + unit.Power / 100) * healMult * Mult
+                unit.Health *= ( 1 + healPerc )
+            elseif nature == 2 then
+                local Add: number = unit.Effect[effectVar[14]] or 0
+                local Mult: number = unit.Effect[effectVar[15]] or 1
+                unit.Health += ( heal + healAdd + Add ) * (1 + 0 / 100) * healMult * Mult
+                unit.Health *= ( 1 + healPerc )
+            elseif nature == 3 then
+                local Add: number = unit.Effect[effectVar[16]] or 0
+                local Mult: number = unit.Effect[effectVar[17]] or 1
+                unit.Health += ( heal + healAdd + Add ) * (1 + 0 / 100) * healMult * Mult
+                unit.Health *= ( 1 + healPerc )
+            end
+
+        end
+        unit.Health = math.round(unit.Health * 10) / 10
+        if unit.Health > unit.MaxHealth then
+            unit.Health = unit.MaxHealth
+            -- TODO: Indicate skills that can overheal
+        end
+
+        -- Update Gui
+        unitUI[4].Text = unit.Health .. " / " .. unit.MaxHealth
+        unitUI[3].Size = UDim2.fromScale(unit.Health / unit.MaxHealth, unitUI[3].Size.Y.Scale)
+
+        if unit.Health <= 0 then
             serverAction:Invoke({
                 action = 6,
                 send = id,
@@ -332,16 +446,25 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     end
 
     local function botAction()
-        -- Obtain Enemy (Player Units)
+        -- Obtain Enemy
         local enemyIdList: {number} = {} -- List of enemy stats
         for _, enemy in pairs(sharedList.unitList) do -- Cannot ipairs() as unitList has nil holes after unit dies
             if enemy == nil then continue end -- Dead unit has [_] = nil
-            if enemy.Team ~= sharedList.unitList[id].Team then
+            if enemy.Team ~= unit.Team then
                 table.insert(enemyIdList, enemy.Id)
             end
         end
+        -- Obtain Allies
+        local allyIdList: {number} = {} -- List of enemy stats
+        for _, ally in pairs(sharedList.unitList) do -- Cannot ipairs() as unitList has nil holes after unit dies
+            if ally == nil then continue end -- Dead unit has [_] = nil
+            if ally.Team == unit.Team then
+                table.insert(allyIdList, ally.Id)
+            end
+        end
+
         -- Smart Action
-        local attackList: {number} = unitAttackList[sharedList.unitList[id].Type]
+        local attackList: {number} = unit.Skills
         local rngAction: number = math.random(1, #attackList)
 
         local attackAction: {} = attackActionList[attackList[rngAction]]
@@ -353,6 +476,15 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
                 receive = id,
                 skillList = attackAction,
                 target = randEnemyId
+            })
+        elseif attackAction.Target == 2 then -- Ally Attack
+            local randAllyId: number = allyIdList[math.random(1, #allyIdList)]
+            ApplyDamage({ -- Call func directly to mock player control; TODO: Change to use Events
+                action = 4,
+                send = id,
+                receive = id,
+                skillList = attackAction,
+                target = randAllyId
             })
         elseif attackAction.Target == -1  then -- Area Attack
             ApplyDamage({
@@ -373,19 +505,26 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     return end
 
     local function DecreaseEffectDuration()
-        local effectList: {} = sharedList.unitList[id].Effect
+        local effectList: {} = unit.Effect
         if not next(effectList) then return end -- If effectList is {}
 
-        for effectNumber, effect in ipairs(effectList) do -- effect is by reference, so can change .Effect'
-            -- List
-            effect[2] -= 1 -- TODO: effect[2] == -1 for infinite duration
-            --Gui
-            unitUI[7][effect[0]].EffectText.Text = effect[2]
+        for effectNumber, effect in pairs(effectList) do -- effect is by reference, so can change .Effect'
+            if not effect then continue end -- effect is nil. Sparse list is not processed
 
-            if effect[2] == 0 then -- Run out
+            -- Pre-existing Effects
+            if effect[effectVar[0]] == nil then
+                ApplyEffect({skillList = {Effect = effect}}) -- Mock effect is applied by attack
+            end
+
+            -- List
+            effect[effectVar[2]] -= 1 -- TODO: effect[2] == -1 for infinite duration
+            --Gui
+            unitUI[7][ effect[effectVar[0]] ].EffectText.Text = effect[effectVar[2]]
+
+            if effect[ effectVar[2] ] == 0 then -- Run out
                 -- Gui
-                unitUI[7][effect[0]]:Destroy()
-                unitUI[7][effect[0]] = nil
+                unitUI[7][ effect[ effectVar[0]] ]:Destroy()
+                unitUI[7][ effect[ effectVar[0]] ] = nil -- Create sparse list
                 -- List
                 effectList[effectNumber] = nil
             end
@@ -393,36 +532,50 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     end
 
     local function ExecuteEffect()
-        local effectList: {} = sharedList.unitList[id].Effect
+        local effectList: {} = unit.Effect
         if not next(effectList) then return end
 
         for _, effect in ipairs(effectList) do
-            if effect[2] <= 0 then effect[2] = 0 return end
+            if effect[effectVar[2]] <= 0 then effect[effectVar[2]] = 0 return end
             print("Effect Executed", id, effect)
 
             local function Damage()
-                local Dmg: number | nil = effect[3]
+                local Dmg: number | nil = effect[effectVar[3]]
                 if Dmg == nil then return end
 
-                local DmgAdd: number = effect[4] or 0
-                local DmgMult: number = effect[5] or 0
                 serverAction:Invoke({
                     action = 4,
                     send = id,
                     receive = id,
                     skillList = {
-                        Nature = "Effect",
-                        Damage = Dmg * (DmgMult + 1) + DmgAdd
+                        Nature = 3,
+                        Damage = Dmg,
                     } -- Mask effect as skill
                 })
             end
             task.spawn(Damage)
+
+            local function Heal() -- Separate from Damage: process effect with both [3] and [6]
+                local heal: number | nil = effect[effectVar[6]]
+                if heal == nil and effect[effectVar[7]] == nil then return end
+
+                serverAction:Invoke({
+                    action = 4,
+                    send = id,
+                    receive = id,
+                    skillList = {
+                        Nature = 3,
+                        Damage = -heal, -- Indicate TakeDamage() that this is heal
+                    } -- Mask effect as skill
+                })
+            end
+            task.spawn(Heal)
         end
 
     end
 
     local function Action()
-        local unit = sharedList.unitList[id]
+        local unit = unit
         print("Actioned: " .. id, sharedList, unit.Owner)
 
         ExecuteEffect()
@@ -487,19 +640,27 @@ function module.ServerScript()
             unitTeam = "Ememy",
             unitOwner = "ai",
         })
+        -- serverAction:Invoke({
+        --     action = 5,
+        --     send = 0,
+        --     receive = 0,
+        --     unitTypeNum = 2,
+        --     unitTeam = "Ememy",
+        --     unitOwner = "ai",
+        -- })
+        -- serverAction:Invoke({
+        --     action = 5,
+        --     send = 0,
+        --     receive = 0,
+        --     unitTypeNum = 3,
+        --     unitTeam = "Ally",
+        --     unitOwner = "FireAlexGame",
+        -- })
         serverAction:Invoke({
             action = 5,
             send = 0,
             receive = 0,
-            unitTypeNum = 2,
-            unitTeam = "Ememy",
-            unitOwner = "ai",
-        })
-        serverAction:Invoke({
-            action = 5,
-            send = 0,
-            receive = 0,
-            unitTypeNum = 2,
+            unitTypeNum = 4,
             unitTeam = "Ally",
             unitOwner = "FireAlexGame",
         })
@@ -530,9 +691,8 @@ function module.ServerScript()
             receive = data.send,
             dataList = {
                 ["attackActionList"] = attackActionList,
-                ["unitAttackList"] = unitAttackList,
-                ["unitType"] = unitNumList,
-                ["effectNameList"] = effectName,
+                ["effectVar"] = effectVar,
+                ["unitNumList"] = unitNumList,
             }
         })
     end
@@ -552,13 +712,13 @@ function module.ServerScript()
         for unitId, unitList in pairs(sharedList.unitList) do
             table.insert(dexList, {
                 Unit = unitId,
-                Dex = unitList.Speed
+                Spd = unitList.Speed
             })
         end
         if #dexList == 0 then warn("No Units Found") return {Error = "Order"} end
 
         table.sort(dexList, function(a, b)
-            return a.Dex > b.Dex
+            return a.Spd > b.Spd
         end)
 
         local orderedList = {}
