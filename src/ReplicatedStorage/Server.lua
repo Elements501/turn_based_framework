@@ -21,15 +21,6 @@ local sharedList: SHARED_LIST.SharedList = SHARED_LIST
 -- Package
 local FH = require(RS:WaitForChild("FunctionHandler"))
 
-function module.Init(part: Instance, data: {} | nil, id: number) -- Remove part in the future
-    -- Initialisation
-    if id == 0 then -- Server scripts: id == 0
-        require(SELF).ServerScript()
-    elseif id > 0 then -- Create units
-        require(UNIT).UnitScript(part, data, id)
-    else warn("Unknown Id") return end
-end
-
 function module.ServerScript()
     -- Server Initialisation -- TODO: Repeatable: can activate / reset by cmd
     local idCounter: number = 1
@@ -192,7 +183,7 @@ function module.ServerScript()
         part.Parent = game.Workspace
         part.Position = Vector3.new(0, 0, idCounter * 5)
 
-        require(SELF).Init(part, dataList, idCounter)
+        require(UNIT).UnitScript(part, dataList, idCounter)
 
         FH.ServerMessage({
             action = 3,
