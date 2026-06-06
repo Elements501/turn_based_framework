@@ -3,11 +3,6 @@ local module = {}
 local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TWS: TweenService = game:GetService("TweenService")
 
-local clientAction: RemoteFunction = (RS:FindFirstChild("ClientAction") :: RemoteFunction?) or Instance.new("RemoteFunction")
-    clientAction.Name = "ClientAction"
-    clientAction.Parent = RS
-local clientFuncList = {}
-
 -- Data
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
 type AttackAction = GAME_DATA.AttackAction
@@ -20,6 +15,9 @@ local unitTypes: UnitType = table.clone(GAME_DATA.unitTypes)
 -- Shared
 local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
 local sharedList: SHARED_LIST.SharedList = SHARED_LIST
+
+-- Package
+local FH = require(RS:WaitForChild("FunctionHandler"))
 
 function module.Init(plr)
     -- GUI
@@ -92,7 +90,7 @@ function module.Init(plr)
     local unitId: number = 0
     guiInstances[2].Activated:Connect(function()
         guiInstances[4].Visible = false
-        clientAction:InvokeServer({
+        FH.ClientMessage({
             action = 2,
             send = plr,
             receive = unitId
@@ -100,7 +98,7 @@ function module.Init(plr)
     end)
     guiInstances[3].Activated:Connect(function()
         guiInstances[4].Visible = false
-        clientAction:InvokeServer({
+        FH.ClientMessage({
             action = 3,
             send = plr,
             receive = unitId,
@@ -108,8 +106,8 @@ function module.Init(plr)
     end)
 
     local function PlayerInput(data)
-        local unitData = data.unitData or nil
-        unitId = data.send or nil
+        local unitData = data.unitData
+        unitId = data.send -- Update Id of the unit controlling
         guiInstances[4].Visible = true
 
         print("Player Received", unitId, unitData)
@@ -181,7 +179,7 @@ function module.Init(plr)
 
                 button.Activated:Connect(function()
                     guiInstances[6].Visible = false
-                    clientAction:InvokeServer({
+                    FH.ClientMessage({
                         action = 4,
                         send = plr,
                         receive = unitId,
@@ -201,7 +199,7 @@ function module.Init(plr)
 
                 button.Activated:Connect(function()
                     guiInstances[6].Visible = false
-                    clientAction:InvokeServer({
+                    FH.ClientMessage({
                         action = 4,
                         send = plr,
                         receive = unitId,
@@ -219,7 +217,7 @@ function module.Init(plr)
                 table.insert(targetIdList, enemy.Id)
             end
 
-            clientAction:InvokeServer({
+            FH.ClientMessage({
                 action = 4,
                 send = plr,
                 receive = unitId,
@@ -227,7 +225,7 @@ function module.Init(plr)
                 target = targetIdList, -- -1: All enemies
             })
         elseif skill.Target ==  0 then -- Spawn Ally Unit
-            clientAction:InvokeServer({
+            FH.ClientMessage({
                 action = 4,
                 send = plr,
                 receive = unitId,
@@ -265,14 +263,10 @@ function module.Init(plr)
         guiInstances[5].Visible = true
     end
 
-    clientAction.OnClientInvoke = function(data)
-        if data.receive ~= plr then return end
-
-        -- TODO: Create check function like executeFunction()
-        if (data.action == -2) then DisplayNotification(data) end
-        if (data.action == 1) then PlayerInput(data) end
-        if (data.action == 4) then ChooseAttackTarget(data) end
-    end
+    -- Handler
+    FH.RegisterClient(plr, -2, DisplayNotification)
+    FH.RegisterClient(plr, 1, PlayerInput)
+    FH.RegisterClient(plr, 4, ChooseAttackTarget)
 end
 
 return module
