@@ -19,6 +19,10 @@ local sharedList: SHARED_LIST.SharedList = SHARED_LIST
 -- Package
 local FH = require(RS:WaitForChild("FunctionHandler"))
 
+-- Modules
+local EffectSystem = require(RS:WaitForChild("EffectSystem"))
+type Effect = EffectSystem.EffectSystemType
+
 function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     local unit: {} = sharedList.unitList[id]
     -- Initialisation
@@ -141,8 +145,10 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     --     receive = 0,
     -- })
 
-    -- Unit Action
+    -- Create Effect
+    local unitEffect: Effect = EffectSystem.new(unit, unitUI, id)
 
+    -- Unit Action
     local function FinishAction() -- No event
         FH.ServerMessage({
             action = 1,
@@ -215,31 +221,6 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         FinishAction()
     end
 
-    local effectId: number = 1
-    local function ApplyEffect(data) -- No event
-        local effect: {} = data.skillList.Effect or nil
-        if effect == nil then return end -- Attack has no effect
-
-        -- Create Gui
-        local effectFrame: Frame = unitUI[5]
-        local effectTemplate: Frame = unitUI[6]
-
-        local newEffect: Frame = effectTemplate:Clone()
-        newEffect.Name = effect[effectKeys[1]]
-        newEffect.Parent = effectFrame
-
-        newEffect.EffectText.Text = effect[effectKeys[2]]
-        -- TODO: Set newEffect.EffectImage
-
-        -- Add effect into the list
-        if next(unit.Effect) == nil then unit.Effect = {} end -- Init .Effect table
-        effect[effectKeys[0]] = effectId -- Give unique effectId
-        unitUI[7][effectId] = newEffect
-        effectId += 1
-        -- Prevent double insertion in .Effect
-        if not data.selfApply then table.insert(unit.Effect, effect) end -- Self apply does not have .Damage
-    end
-
     local function TakeDamage(data) -- server 4
         -- Notification
         for _, plr in ipairs(PS:GetPlayers()) do
@@ -259,19 +240,14 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         end
 
         if unit == nil then return end
-        -- Apply Effect
-        ApplyEffect(data)
+        unitEffect:ApplyEffect(data)
 
         -- Calculate damage taken; TODO: Resistance + Critical + Vulnerability
-        local damage: number | nil = data.skillList.Damage
-        local nature: number | nil = data.skillList.Nature
+        local damage: number? = data.skillList.Damage
+        local nature: number? = data.skillList.Nature
 
-        local function GetEffect(key: string): number?
-            local num: number? = nil
-            for _, effect in pairs(unit.Effect) do
-                if effect and effect[key] then num = (num or 0) + effect[key] end
-            end
-            return num
+        local function GetEffect(key)
+            return unitEffect:GetEffect(key)
         end
 
         if damage >= 0 then -- Dealing damage
@@ -390,82 +366,12 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         else warn("Unknown Target Range") return end
     return end
 
-    local function DecreaseEffectDuration()
-        local effectList: {} = unit.Effect
-        if not next(effectList) then return end -- If effectList is {}
-
-        for effectNumber, effect in pairs(effectList) do
-            if not effect then continue end -- effect is nil. Sparse list is not processed
-
-            -- Pre-existing Effects
-            if effect[effectKeys[0]] == nil then
-                ApplyEffect({selfApply = true, skillList = {Effect = effect}}) -- Mock effect is applied by attack
-            end
-
-            -- List
-            effect[effectKeys[2]] -= 1 -- TODO: effect[2] == -1 for infinite duration
-            --Gui
-            unitUI[7][ effect[effectKeys[0]] ].EffectText.Text = effect[effectKeys[2]]
-
-            if effect[ effectKeys[2] ] == 0 then -- Run out
-                -- Gui
-                unitUI[7][ effect[ effectKeys[0]] ]:Destroy()
-                unitUI[7][ effect[ effectKeys[0]] ] = nil -- Create sparse list
-                -- List
-                effectList[effectNumber] = nil
-            end
-        end
-    end
-
-    local function ExecuteEffect()
-        local effectList: {} = unit.Effect
-        if not next(effectList) then return end
-
-        for _, effect in ipairs(effectList) do
-            if effect[effectKeys[2]] <= 0 then effect[effectKeys[2]] = 0 return end
-            print("Effect Executed", id, effect)
-
-            local function Damage()
-                local Dmg: number | nil = effect[effectKeys[3]]
-                if Dmg == nil then return end
-
-                FH.ServerMessage({
-                    action = 4,
-                    send = id,
-                    receive = id,
-                    skillList = {
-                        Nature = 3,
-                        Damage = Dmg,
-                    } -- Mask effect as skill
-                })
-            end
-            task.spawn(Damage)
-
-            local function Heal() -- Separate from Damage: process effect with both [3] and [6]
-                local heal: number | nil = effect[effectKeys[6]]
-                if heal == nil and effect[effectKeys[7]] == nil then return end
-
-                FH.ServerMessage({
-                    action = 4,
-                    send = id,
-                    receive = id,
-                    skillList = {
-                        Nature = 3,
-                        Damage = -heal, -- Indicate TakeDamage() that this is heal
-                    } -- Mask effect as skill
-                })
-            end
-            task.spawn(Heal)
-        end
-
-    end
-
     local function Action()
         print("Actioned: " .. id, sharedList, unit.Owner)
 
-        ExecuteEffect()
+        unitEffect:ExecuteEffect()
         if unit == nil then return end -- Unit died by effect
-        DecreaseEffectDuration()
+        unitEffect:DecreaseEffectDuration()
 
         if unit.Owner == "ai" then
             botAction()
