@@ -22,6 +22,8 @@ local FH = require(RS:WaitForChild("FunctionHandler"))
 -- Modules
 local EffectSystem = require(RS:WaitForChild("EffectSystem"))
 type Effect = EffectSystem.EffectSystemType
+local BotSystem = require(RS:WaitForChild("BotSystem"))
+type botAction = BotSystem.BotSystemType
 
 function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     local unit: {} = sharedList.unitList[id]
@@ -145,8 +147,9 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     --     receive = 0,
     -- })
 
-    -- Create Effect
+    -- Modules
     local unitEffect: Effect = EffectSystem.new(unit, unitUI, id)
+    local botAction: botAction = BotSystem.new(unit, attackActions, id)
 
     -- Unit Action
     local function FinishAction() -- No event
@@ -307,65 +310,6 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         end
     end
 
-    local function botAction()
-        -- Obtain Enemy
-        local enemyIdList: {number} = {} -- List of enemy stats
-        for _, enemy in pairs(sharedList.unitList) do -- Cannot ipairs() as unitList has nil holes after unit dies
-            if enemy == nil then continue end -- Dead unit has [_] = nil
-            if enemy.Team ~= unit.Team then
-                table.insert(enemyIdList, enemy.Id)
-            end
-        end
-        -- Obtain Allies
-        local allyIdList: {number} = {} -- List of enemy stats
-        for _, ally in pairs(sharedList.unitList) do -- Cannot ipairs() as unitList has nil holes after unit dies
-            if ally == nil then continue end -- Dead unit has [_] = nil
-            if ally.Team == unit.Team then
-                table.insert(allyIdList, ally.Id)
-            end
-        end
-
-        -- Smart Action
-        local attackList: {number} = unit.Skills
-        local rngAction: number = math.random(1, #attackList)
-
-        local attackAction: {} = attackActions[attackList[rngAction]]
-        if attackAction.Target == 1 then -- Single Attack
-            local randEnemyId: number = enemyIdList[math.random(1, #enemyIdList)]
-            ApplyDamage({ -- Call func directly to mock player control; TODO: Change to use Events
-                action = 4,
-                send = id,
-                receive = id,
-                skillList = attackAction,
-                target = randEnemyId
-            })
-        elseif attackAction.Target == 2 then -- Ally Attack
-            local randAllyId: number = allyIdList[math.random(1, #allyIdList)]
-            ApplyDamage({ -- Call func directly to mock player control; TODO: Change to use Events
-                action = 4,
-                send = id,
-                receive = id,
-                skillList = attackAction,
-                target = randAllyId
-            })
-        elseif attackAction.Target == -1  then -- Area Attack
-            ApplyDamage({
-                action = 4,
-                send = id,
-                receive = id,
-                skillList = attackAction,
-                target = enemyIdList
-            })
-        elseif attackAction.Target ==  0 then -- Spawn Ally Unit
-            ApplyDamage({
-                action = 4,
-                send = id,
-                receive = id,
-                skillList = attackAction,
-            })
-        else warn("Unknown Target Range") return end
-    return end
-
     local function Action()
         print("Actioned: " .. id, sharedList, unit.Owner)
 
@@ -374,18 +318,24 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         unitEffect:DecreaseEffectDuration()
 
         if unit.Owner == "ai" then
-            botAction()
-            return
+            local action = botAction:ChooseAction(sharedList)
+            ApplyDamage({
+                action = 4,
+                send = id,
+                receive = id,
+                skillList = action.skillList,
+                target = action.target,
+            })
+        else
+            local plrOwner: Player = game:GetService("Players"):FindFirstChild(unit.Owner)
+            if not plrOwner then warn("Unknown Player Action") return end
+            FH.ClientMessage({
+                action = 1,
+                send = id,
+                receive = plrOwner,
+                unitData = unit
+            })
         end
-
-        local plrOwner: Player = game:GetService("Players"):FindFirstChild(unit.Owner)
-        if not plrOwner then warn("Unknown Player Action") return end
-        FH.ClientMessage({
-            action = 1,
-            send = id,
-            receive = plrOwner,
-            unitData = unit
-        })
     end
 
     -- Handler
