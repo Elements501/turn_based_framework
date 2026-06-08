@@ -24,6 +24,8 @@ local EffectSystem = require(RS:WaitForChild("EffectSystem"))
 type Effect = EffectSystem.EffectSystemType
 local BotSystem = require(RS:WaitForChild("BotSystem"))
 type botAction = BotSystem.BotSystemType
+local UiSystem = require(RS:WaitForChild("UiSystem"))
+type UnitUi = UiSystem.UiSystemType
 
 function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     local unit: {} = sharedList.unitList[id]
@@ -50,97 +52,6 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     end
     if not updateList() then warn("Failed to Check In") return end -- Run check in with False -> ERROR
 
-    local function CreateHpBar(): {Instance}
-        local topBar: BillboardGui = Instance.new("BillboardGui")
-        topBar.Parent = part
-        topBar.Adornee = part
-        topBar.Name = "HpBar " .. id
-        topBar.Size = UDim2.fromScale(5, 2)
-        topBar.ExtentsOffset = Vector3.new(0, 6, 0)
-
-        local UIListLayout: UIListLayout = Instance.new("UIListLayout")
-        UIListLayout.Parent = topBar
-        UIListLayout.Name = "UIListLayout"
-        UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-        -- Hp Bar
-        local hpBarBackground: Frame = Instance.new("Frame")
-        hpBarBackground.Parent = topBar
-        hpBarBackground.Name = "Health Bar"
-        hpBarBackground.BackgroundColor3 = Color3.new(1, 1, 1)
-        hpBarBackground.BackgroundTransparency = 0
-        hpBarBackground.Size = UDim2.fromScale(1, 0.5)
-        hpBarBackground.ZIndex = 0
-        hpBarBackground.LayoutOrder = 2
-
-        local hpBarBar: Frame = Instance.new("Frame")
-        hpBarBar.Parent = hpBarBackground
-        hpBarBar.BackgroundColor3 = Color3.new(0, 0, 0)
-        hpBarBar.BackgroundTransparency = 0
-        hpBarBar.Size = UDim2.fromScale(0.96, 0.8)
-        hpBarBar.Position = UDim2.fromScale(0.02, 0.1)
-        hpBarBar.ZIndex = 1
-
-        local hpBarText: TextLabel = Instance.new("TextLabel")
-        hpBarText.Parent = hpBarBackground
-        hpBarText.Text = unit.Health .. " / " .. unit.MaxHealth
-        hpBarText.TextColor3 = Color3.new(0.5, 0.5, 0.5)
-        hpBarText.Size = UDim2.fromScale(1, 1)
-        hpBarText.TextScaled = true
-        hpBarText.BackgroundTransparency = 1
-        hpBarText.ZIndex = 2
-
-        -- Status Effect
-        local statusBackground: Frame = Instance.new("Frame")
-        statusBackground.Parent = topBar
-        statusBackground.Name = "Status Bar"
-        statusBackground.Size = UDim2.fromScale(1, 0.5)
-        statusBackground.BackgroundTransparency = 1
-        statusBackground.ZIndex = 0
-        statusBackground.LayoutOrder = 1
-
-        local UiPadding: UIPadding = Instance.new("UIPadding")
-        UiPadding.Parent = statusBackground
-        UiPadding.PaddingBottom = UDim.new(0.05, 0)
-
-        local UiGridLayout: UIGridLayout = Instance.new("UIGridLayout")
-        UiGridLayout.Parent = statusBackground
-        UiGridLayout.Name = "UIGridLayout"
-        UiGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        UiGridLayout.CellPadding = UDim2.fromScale(0.02, 0.05)
-        UiGridLayout.CellSize = UDim2.fromScale(0.2, 1)
-
-        local effectGui: Frame = Instance.new("Frame") -- Template, no parent
-        effectGui.BackgroundTransparency = 1
-
-        local effectGuiImage: ImageLabel = Instance.new("ImageLabel")
-        effectGuiImage.Name = "EffectImage"
-        effectGuiImage.Parent = effectGui
-        effectGuiImage.Size = UDim2.fromScale(1, 1)
-        effectGuiImage.ZIndex = 0
-
-        local effectGuiText: TextLabel = Instance.new("TextLabel")
-        effectGuiText.Name = "EffectText"
-        effectGuiText.Parent = effectGui
-        effectGuiText.Size = UDim2.fromScale(1, 1)
-        hpBarText.TextColor3 = Color3.new(0.5, 0.5, 0.5)
-        hpBarText.TextScaled = true
-        effectGuiText.BackgroundTransparency = 1
-        effectGuiText.ZIndex = 1
-
-        return {
-            [1] = topBar,
-            [2] = hpBarBackground,
-            [3] = hpBarBar,
-            [4] = hpBarText,
-            [5] = statusBackground,
-            [6] = effectGui,
-            [7] = {} -- List for holding effectGui Clones
-        } -- TEMP: no return False case; TODO: Add checking
-    end
-    local unitUI: {} = CreateHpBar()
-    if not unitUI then warn("Failed to Create HP Bar") return end -- False -> Error
-
     -- FH.ServerMessage({ -- TODO: Make units automatically add to id: 0, instead of FindUnits()
     --     action = 5,
     --     send = id,
@@ -148,6 +59,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     -- })
 
     -- Modules
+    local unitUI: UnitUi = UiSystem.new(part, unit)
     local unitEffect: Effect = EffectSystem.new(unit, unitUI, id)
     local botAction: botAction = BotSystem.new(unit, attackActions, id)
 
@@ -295,9 +207,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             -- TODO: Indicate skills that can overheal
         end
 
-        -- Update Gui
-        unitUI[4].Text = unit.Health .. " / " .. unit.MaxHealth
-        unitUI[3].Size = UDim2.fromScale(unit.Health / unit.MaxHealth * 0.96, unitUI[3].Size.Y.Scale)
+        unitUI:UpdateHealth(unit.Health, unit.MaxHealth)
 
         if unit.Health <= 0 then
             FH.ServerMessage({

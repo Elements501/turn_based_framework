@@ -6,22 +6,19 @@ EffectSystem.__index = EffectSystem
 
 export type EffectSystemType = {
     unit: {},
-    unitUI: {},
+    unitUI: {}, -- UiSystem.lua
     id: number,
-    effectId: number,
     GetEffect: (self: EffectSystemType, key: string) -> number?,
     ApplyEffect: (self: EffectSystemType, data: {}) -> (),
     DecreaseEffectDuration: (self: EffectSystemType) -> (),
     ExecuteEffect: (self: EffectSystemType) -> (),
 }
 
-
 function EffectSystem.new(unit: {}, unitUI: {}, id: number)
     return setmetatable({
-        unit     = unit,
-        unitUI   = unitUI,
-        id       = id,
-        effectId = 1,
+        unit = unit,
+        unitUI = unitUI,
+        id = id,
     }, EffectSystem)
 end
 
@@ -37,16 +34,8 @@ function EffectSystem:ApplyEffect(data)
     local effect = data.skillList.Effect
     if effect == nil then return end
 
-    local newEffect: Frame = self.unitUI[6]:Clone()
-    newEffect.Name = effect.Name
-    newEffect.Parent = self.unitUI[5]
-    newEffect.EffectText.Text = effect.Duration
-    -- TODO: Set newEffect.EffectImage
-
     if next(self.unit.Effect) == nil then self.unit.Effect = {} end
-    effect.EffectId = self.effectId
-    self.unitUI[7][self.effectId] = newEffect
-    self.effectId += 1
+    effect.EffectId = self.unitUI:AddEffect(effect)
 
     if not data.selfApply then table.insert(self.unit.Effect, effect) end
 end
@@ -63,11 +52,10 @@ function EffectSystem:DecreaseEffectDuration()
         end
 
         effect.Duration -= 1 -- TODO: Duration == -1 for infinite
-        self.unitUI[7][effect.EffectId].EffectText.Text = effect.Duration
+        self.unitUI:UpdateEffect(effect.EffectId, effect.Duration)
 
         if effect.Duration == 0 then
-            self.unitUI[7][effect.EffectId]:Destroy()
-            self.unitUI[7][effect.EffectId] = nil
+            self.unitUI:RemoveEffect(effect.EffectId)
             effectList[effectNumber] = nil
         end
     end
