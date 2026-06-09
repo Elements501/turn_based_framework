@@ -8,11 +8,11 @@ local UNIT: ModuleScript = RS:WaitForChild("Unit")
 -- Data
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
 type AttackAction = GAME_DATA.AttackAction
-type EffectVariable = GAME_DATA.EffectVariable
 type UnitType = GAME_DATA.UnitType
+type Macros = GAME_DATA.Macros
 local attackActions: AttackAction = table.clone(GAME_DATA.attackActions)
-local effectKeys: {[number]: string} = table.clone(GAME_DATA.effectKeys)
 local unitTypes: UnitType = table.clone(GAME_DATA.unitTypes)
+local MACROS: Macros = table.clone(GAME_DATA.MACROS)
 
 -- Shared
 local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
@@ -197,10 +197,10 @@ function module.ServerScript()
     end
 
     -- Handler
-    FH.RegisterServer(0, 1, RoundCounter)
-    FH.RegisterServer(0, 3, OrderUnits)
-    FH.RegisterServer(0, 5, SummonUnit)
-    FH.RegisterServer(0, 6, RemoveUnit)
+    FH.RegisterServer(0, MACROS.ROUND_COUNTER, RoundCounter)
+    FH.RegisterServer(0, MACROS.ORDER_UNITS, OrderUnits)
+    FH.RegisterServer(0, MACROS.SUMMON_UNIT, SummonUnit)
+    FH.RegisterServer(0, MACROS.REMOVE_UNIT, RemoveUnit)
 
 end
 

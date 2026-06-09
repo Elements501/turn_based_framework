@@ -1,4 +1,24 @@
 --!strict
+export type Macros = {[number]: any}
+
+local MACROS = {
+    -- Server <-> Server Actions
+    ROUND_COUNTER = 1,
+    ORDER_UNITS = 3,
+    TAKE_DAMAGE = 4,
+    SUMMON_UNIT = 5,
+    REMOVE_UNIT = 6,
+    ACTION = 7,
+    -- Server -> Client Actions
+    DISPLAY_NOTIFICATION = -2,
+    PLAYER_INPUT = 1,
+    CHOOSE_ATTACK_TARGET = 4,
+    -- Client -> Server Actions
+    FINISH_ACTION = 2,
+    ATTACK_ACTION = 3,
+    APPLY_DAMAGE = 4
+}
+
 export type EffectVariable = {
     EffectId: number?,
     Name: string,
@@ -9,45 +29,20 @@ export type EffectVariable = {
     DamageMult: number?,
     -- Constant Heal
     HealConst: number?,
-    HealPercent: number?,
+    HealPerc: number?,
     HealAdd: number?,
     HealMult: number?,
     -- Damage Buff
     AttackAdd: number?,
     AttackMult: number?,
     -- Attack Nature Buff
-    OneAdd: number?,
-    OneMult: number?,
-    TwoAdd: number?,
-    TwoMult: number?,
-    ThreeAdd: number?,
-    ThreeMult: number?,
+    PhyAdd: number?,
+    PhyMult: number?,
+    MagicAdd: number?,
+    MagicMult: number?,
+    EffectAdd: number?,
+    EffectMult: number?,
 }
-
-local effectKeys: {[number]: string} = {
-    [0] = "EffectId",
-    [1] = "Name",
-    [2] = "Duration",
-    -- Constant Damage
-    [3] = "Damage",
-    [4] = "DamageAdd",
-    [5] = "DamageMult",
-    -- Constant Heal
-    [6] = "HealConst",
-    [7] = "HealPercent",
-    [8] = "HealAdd",
-    [9] = "HealMult",
-    -- Damage Buff
-    [10] = "AttackAdd",
-    [11] = "AttackMult",
-    -- Attack Nature Buff
-    [12] = "OneAdd",
-    [13] = "OneMult",
-    [14] = "TwoAdd",
-    [15] = "TwoMult",
-    [16] = "ThreeAdd",
-    [17] = "ThreeMult",
-} -- TODO: Heal Buff
 
 export type AttackAction = {
     [number]: {
@@ -168,8 +163,8 @@ local unitTypes: UnitType = {
 -- Handler
 local gameData = {
     ["attackActions"] = table.freeze(attackActions),
-    ["effectKeys"] = table.freeze(effectKeys),
     ["unitTypes"] = table.freeze(unitTypes),
+    ["MACROS"] = table.freeze(MACROS),
 }
 
 return gameData -- types are automatically exported as gameData.[type_name]

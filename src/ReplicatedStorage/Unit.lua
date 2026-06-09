@@ -6,11 +6,11 @@ local PS: Players = game:GetService("Players")
 -- Data
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
 type AttackAction = GAME_DATA.AttackAction
-type EffectVariable = GAME_DATA.EffectVariable
 type UnitType = GAME_DATA.UnitType
+type Macros = GAME_DATA.Macros
 local attackActions: AttackAction = table.clone(GAME_DATA.attackActions)
-local effectKeys: {[number]: string} = table.clone(GAME_DATA.effectKeys)
 local unitTypes: UnitType = table.clone(GAME_DATA.unitTypes)
+local MACROS: Macros = table.clone(GAME_DATA.MACROS)
 
 -- Shared
 local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
@@ -166,41 +166,45 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         end
 
         if damage >= 0 then -- Dealing damage
-            local attackAdd = GetEffect(effectKeys[10]) or 0
-            local attackMult = GetEffect(effectKeys[11]) or 1
-            local Add: number; local Mult: number
+            local attackAdd = GetEffect("AttackAdd") or 0
+            local attackMult = GetEffect("AttackMult") or 1
+            local add: number; local mult: number
 
+            local natureBuff: number = 0
             if nature == 1 then
-                Add = GetEffect(effectKeys[12]) or 0; Mult = GetEffect(effectKeys[13]) or 1
-                unit.Health -= ( damage + attackAdd + Add ) * (1 + unit.Power / 100) * attackMult * Mult
+                add = GetEffect("PhyAdd") or 0; mult = GetEffect("PhyMult") or 1
+                natureBuff = unit.Power
             elseif nature == 2 then
-                Add = GetEffect(effectKeys[14]) or 0; Mult = GetEffect(effectKeys[15]) or 1
-                unit.Health -= ( damage + attackAdd + Add ) * (1 + 0 / 100) * attackMult * Mult -- TODO: Stats that replace 0
+                add = GetEffect("MagicAdd") or 0; mult = GetEffect("MagicMult") or 1
+                natureBuff = 0 -- TODO
             elseif nature == 3 then
-                Add = GetEffect(effectKeys[16]) or 0; Mult = GetEffect(effectKeys[17]) or 1
-                unit.Health -= ( damage + attackAdd + Add ) * (1 + 0 / 100) * attackMult * Mult
+                add = GetEffect("EffectAdd") or 0; mult = GetEffect("EffectMult") or 1
+                natureBuff = 0 -- TODO
             end
+            unit.Health -= ( damage + attackAdd + add ) * (1 + natureBuff / 100) * attackMult * mult
+
         elseif damage < 0 then -- Doing healing
             local heal = -damage
-            local healPerc = GetEffect(effectKeys[7]) or 0
-            local healAdd = GetEffect(effectKeys[8]) or 0
-            local healMult = GetEffect(effectKeys[9]) or 1
-            local Add: number; local Mult: number
+            local healPerc = GetEffect("HealPerc") or 0
+            local healAdd = GetEffect("HealAdd") or 0
+            local healMult = GetEffect("HealMult") or 1
+            local add: number; local mult: number
 
+            local natureBuff: number = 0
             if nature == 1 then
-                Add = GetEffect(effectKeys[12]) or 0; Mult = GetEffect(effectKeys[13]) or 1
-                unit.Health += ( heal + healAdd + Add ) * (1 + unit.Power / 100) * healMult * Mult
-                unit.Health *= ( 1 + healPerc )
+                add = GetEffect("PhyAdd") or 0; mult = GetEffect("PhyMult") or 1
+                natureBuff = unit.Power
             elseif nature == 2 then
-                Add = GetEffect(effectKeys[14]) or 0; Mult = GetEffect(effectKeys[15]) or 1
-                unit.Health += ( heal + healAdd + Add ) * (1 + 0 / 100) * healMult * Mult
-                unit.Health *= ( 1 + healPerc )
+                add = GetEffect("MagicAdd") or 0; mult = GetEffect("MagicMult") or 1
+                natureBuff = 0 -- TODO
             elseif nature == 3 then
-                Add = GetEffect(effectKeys[16]) or 0; Mult = GetEffect(effectKeys[17]) or 1
-                unit.Health += ( heal + healAdd + Add ) * (1 + 0 / 100) * healMult * Mult
-                unit.Health *= ( 1 + healPerc )
+                add = GetEffect("EffectAdd") or 0; mult = GetEffect("EffectMult") or 1
+                natureBuff = 0 -- TODO
             end
+            unit.Health += ( heal + healAdd + add ) * (1 + natureBuff / 100) * healMult * mult
+            unit.Health *= ( 1 + healPerc )
         end
+
         unit.Health = math.round(unit.Health * 10) / 10
         if unit.Health > unit.MaxHealth then
             unit.Health = unit.MaxHealth
@@ -249,12 +253,12 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     end
 
     -- Handler
-    FH.RegisterServer(id, 4, TakeDamage)
-    FH.RegisterServer(id, 7, Action)
+    FH.RegisterServer(id, MACROS.TAKE_DAMAGE, TakeDamage)
+    FH.RegisterServer(id, MACROS.ACTION, Action)
 
-    FH.RegisterClient(id, 2, FinishAction)
-    FH.RegisterClient(id, 3, AttackAction)
-    FH.RegisterClient(id, 4, ApplyDamage)
+    FH.RegisterClient(id, MACROS.FINISH_ACTION, FinishAction)
+    FH.RegisterClient(id, MACROS.ATTACK_ACTION, AttackAction)
+    FH.RegisterClient(id, MACROS.APPLY_DAMAGE, ApplyDamage)
 
 end
 

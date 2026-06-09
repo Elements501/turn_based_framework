@@ -6,11 +6,11 @@ local TWS: TweenService = game:GetService("TweenService")
 -- Data
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
 type AttackAction = GAME_DATA.AttackAction
-type EffectVariable = GAME_DATA.EffectVariable
 type UnitType = GAME_DATA.UnitType
+type Macros = GAME_DATA.Macros
 local attackActions: AttackAction = table.clone(GAME_DATA.attackActions)
-local effectKeys: {[number]: string} = table.clone(GAME_DATA.effectKeys)
 local unitTypes: UnitType = table.clone(GAME_DATA.unitTypes)
+local MACROS: Macros = table.clone(GAME_DATA.MACROS)
 
 -- Shared
 local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
@@ -264,9 +264,9 @@ function module.Init(plr)
     end
 
     -- Handler
-    FH.RegisterClient(plr, -2, DisplayNotification)
-    FH.RegisterClient(plr, 1, PlayerInput)
-    FH.RegisterClient(plr, 4, ChooseAttackTarget)
+    FH.RegisterClient(plr, MACROS.DISPLAY_NOTIFICATION, DisplayNotification)
+    FH.RegisterClient(plr, MACROS.PLAYER_INPUT, PlayerInput)
+    FH.RegisterClient(plr, MACROS.CHOOSE_ATTACK_TARGET, ChooseAttackTarget)
 end
 
 return module
