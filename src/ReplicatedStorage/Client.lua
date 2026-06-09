@@ -8,9 +8,9 @@ local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
 type AttackAction = GAME_DATA.AttackAction
 type UnitType = GAME_DATA.UnitType
 type Macros = GAME_DATA.Macros
-local attackActions: AttackAction = table.clone(GAME_DATA.attackActions)
-local unitTypes: UnitType = table.clone(GAME_DATA.unitTypes)
-local MACROS: Macros = table.clone(GAME_DATA.MACROS)
+local attackActions: AttackAction = GAME_DATA.attackActions
+local unitTypes: UnitType = GAME_DATA.unitTypes
+local MACROS: Macros = GAME_DATA.MACROS
 
 -- Shared
 local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
@@ -91,7 +91,7 @@ function module.Init(plr)
     guiInstances[2].Activated:Connect(function()
         guiInstances[4].Visible = false
         FH.ClientMessage({
-            action = 2,
+            action = MACROS.FINISH_ACTION,
             send = plr,
             receive = unitId
         })
@@ -99,7 +99,7 @@ function module.Init(plr)
     guiInstances[3].Activated:Connect(function()
         guiInstances[4].Visible = false
         FH.ClientMessage({
-            action = 3,
+            action = MACROS.ATTACK_ACTION,
             send = plr,
             receive = unitId,
         })
@@ -170,63 +170,53 @@ function module.Init(plr)
     end
 
     local function AttackEnemy(skill, enemyList, allyList) -- enemyList is numbered, skill is string-indexed with Name
-        if skill.Target == 1 then -- Single Attack
-            for _, enemy in ipairs(enemyList) do
+        local targetList: {[number]: number} = {}
+        local allyTarBoolList = {
+            [MACROS.SINGLE_ALLY_ATTACK] = true,
+            [MACROS.MULTIPLE_ALLY_ATTACK] = true,
+            [MACROS.ALL_ALLY_ATTACK] = true,
+        }
+        if allyTarBoolList[skill.Target] then targetList = allyList
+        else targetList = enemyList end
+
+        if skill.Target == MACROS.SINGLE_ENEMY_ATTACK or skill.Target == MACROS.SINGLE_ALLY_ATTACK then
+
+            for _, target in ipairs(targetList) do
                 local button: TextButton = Instance.new("TextButton")
                 button.Parent = guiInstances[6]
-                button.Text = enemy.Name
+                button.Text = target.Name
                 button.Size = UDim2.fromScale(0.1, 1)
 
                 button.Activated:Connect(function()
                     guiInstances[6].Visible = false
                     FH.ClientMessage({
-                        action = 4,
+                        action = MACROS.APPLY_DAMAGE,
                         send = plr,
                         receive = unitId,
                         skillList = skill,
-                        target = enemy.Id,
+                        target = target.Id,
                     })
                     RemoveChildUI(guiInstances[6])
                 end)
             end
             guiInstances[6].Visible = true
-        elseif skill.Target == 2 then
-            for _, ally in ipairs(allyList) do
-                local button: TextButton = Instance.new("TextButton")
-                button.Parent = guiInstances[6]
-                button.Text = ally.Name
-                button.Size = UDim2.fromScale(0.1, 1)
-
-                button.Activated:Connect(function()
-                    guiInstances[6].Visible = false
-                    FH.ClientMessage({
-                        action = 4,
-                        send = plr,
-                        receive = unitId,
-                        skillList = skill,
-                        target = ally.Id,
-                    })
-                    RemoveChildUI(guiInstances[6])
-                end)
-            end
-            guiInstances[6].Visible = true
-        elseif skill.Target == -1 then -- Area Attack
-            -- Get enemy Id
+        elseif skill.Target == MACROS.ALL_ENEMY_ATTACK or skill.Target == MACROS.ALL_ALLY_ATTACK then
             local targetIdList = {}
-            for _, enemy in ipairs(enemyList) do
-                table.insert(targetIdList, enemy.Id)
+
+            for _, target in ipairs(targetList) do
+                table.insert(targetIdList, target.Id)
             end
 
             FH.ClientMessage({
-                action = 4,
+                action = MACROS.APPLY_DAMAGE,
                 send = plr,
                 receive = unitId,
                 skillList = skill,
                 target = targetIdList, -- -1: All enemies
             })
-        elseif skill.Target ==  0 then -- Spawn Ally Unit
+        elseif skill.Target == MACROS.SUMMON_ATTACK then -- Spawn Ally Unit
             FH.ClientMessage({
-                action = 4,
+                action = MACROS.APPLY_DAMAGE,
                 send = plr,
                 receive = unitId,
                 skillList = skill,

@@ -8,9 +8,9 @@ local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
 type AttackAction = GAME_DATA.AttackAction
 type UnitType = GAME_DATA.UnitType
 type Macros = GAME_DATA.Macros
-local attackActions: AttackAction = table.clone(GAME_DATA.attackActions)
-local unitTypes: UnitType = table.clone(GAME_DATA.unitTypes)
-local MACROS: Macros = table.clone(GAME_DATA.MACROS)
+local attackActions: AttackAction = GAME_DATA.attackActions
+local unitTypes: UnitType = GAME_DATA.unitTypes
+local MACROS: Macros = GAME_DATA.MACROS
 
 -- Shared
 local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
@@ -66,7 +66,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     -- Unit Action
     local function FinishAction() -- No event
         FH.ServerMessage({
-            action = 1,
+            action = MACROS.ROUND_COUNTER,
             send = id,
             receive = 0,
         })
@@ -92,7 +92,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         end
 
         FH.ClientMessage({
-            action = 4,
+            action = MACROS.CHOOSE_ATTACK_TARGET,
             send = id,
             receive = plrOwner,
             Type = unit.Type, --TODO: Investigate what is this for
@@ -104,27 +104,27 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
     local function ApplyDamage(data)
         print("Attack Used: ", data.skillList, "; On unit:", data.target)
-        if data.skillList.Target == 1 or data.skillList.Target == 2 then -- Single or Ally Attack
+        if data.skillList.Target == MACROS.SINGLE_ENEMY_ATTACK or data.skillList.Target == MACROS.SINGLE_ALLY_ATTACK then
             FH.ServerMessage({
-                action = 4,
+                action = MACROS.TAKE_DAMAGE,
                 send = id,
                 receive = data.target,
                 skillList = data.skillList,
             })
-        elseif data.skillList.Target == -1 then -- Area Attack
-            if typeof(data.target) ~= "table" then warn("Unknown Enemy List") return end
-            for _, enemyId in ipairs(data.target) do
+        elseif data.skillList.Target == MACROS.ALL_ENEMY_ATTACK or data.skillList.Target == MACROS.ALL_ALLY_ATTACK then -- Area Attack
+            if typeof(data.target) ~= "table" then warn("Unknown Target List") return end
+            for _, targetId in ipairs(data.target) do
                 FH.ServerMessage({
-                    action = 4,
+                    action = MACROS.TAKE_DAMAGE,
                     send = id,
-                    receive = enemyId,
+                    receive = targetId,
                     -- Extra
                     skillList = data.skillList
                 })
             end
-        elseif data.skillList.Target == 0 then -- Summon Ally Unit
+        elseif data.skillList.Target == MACROS.SUMMON_ATTACK then -- Summon Ally Unit
             FH.ServerMessage({
-                action = 5,
+                action = MACROS.SUMMON_UNIT,
                 send = id,
                 receive = 0,
                 -- Extra
@@ -140,7 +140,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         -- Notification
         for _, plr in ipairs(PS:GetPlayers()) do
             FH.ClientMessage({
-                action = -2,
+                action = MACROS.DISPLAY_NOTIFICATION,
                 send = id,
                 receive = plr,
                 msg = {
@@ -165,12 +165,9 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             return unitEffect:GetEffect(key)
         end
 
-        if damage >= 0 then -- Dealing damage
-            local attackAdd = GetEffect("AttackAdd") or 0
-            local attackMult = GetEffect("AttackMult") or 1
-            local add: number; local mult: number
+        local function GetNatureModifier(): ()->(number, number, number)
+            local add: number; local mult: number; local natureBuff: number
 
-            local natureBuff: number = 0
             if nature == 1 then
                 add = GetEffect("PhyAdd") or 0; mult = GetEffect("PhyMult") or 1
                 natureBuff = unit.Power
@@ -181,6 +178,16 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
                 add = GetEffect("EffectAdd") or 0; mult = GetEffect("EffectMult") or 1
                 natureBuff = 0 -- TODO
             end
+
+            return add, mult, natureBuff
+        end
+
+        if damage >= 0 then -- Dealing damage
+            local attackAdd = GetEffect("AttackAdd") or 0
+            local attackMult = GetEffect("AttackMult") or 1
+
+            local add: number, mult: number, natureBuff: number = GetNatureModifier()
+
             unit.Health -= ( damage + attackAdd + add ) * (1 + natureBuff / 100) * attackMult * mult
 
         elseif damage < 0 then -- Doing healing
@@ -188,19 +195,9 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             local healPerc = GetEffect("HealPerc") or 0
             local healAdd = GetEffect("HealAdd") or 0
             local healMult = GetEffect("HealMult") or 1
-            local add: number; local mult: number
 
-            local natureBuff: number = 0
-            if nature == 1 then
-                add = GetEffect("PhyAdd") or 0; mult = GetEffect("PhyMult") or 1
-                natureBuff = unit.Power
-            elseif nature == 2 then
-                add = GetEffect("MagicAdd") or 0; mult = GetEffect("MagicMult") or 1
-                natureBuff = 0 -- TODO
-            elseif nature == 3 then
-                add = GetEffect("EffectAdd") or 0; mult = GetEffect("EffectMult") or 1
-                natureBuff = 0 -- TODO
-            end
+            local add: number, mult: number, natureBuff: number = GetNatureModifier()
+
             unit.Health += ( heal + healAdd + add ) * (1 + natureBuff / 100) * healMult * mult
             unit.Health *= ( 1 + healPerc )
         end
@@ -215,7 +212,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
         if unit.Health <= 0 then
             FH.ServerMessage({
-                action = 6,
+                action = MACROS.REMOVE_UNIT,
                 send = id,
                 receive = 0,
             })
@@ -234,7 +231,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         if unit.Owner == "ai" then
             local action = botAction:ChooseAction(sharedList)
             ApplyDamage({
-                action = 4,
+                action = MACROS.TAKE_DAMAGE,
                 send = id,
                 receive = id,
                 skillList = action.skillList,
@@ -244,7 +241,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             local plrOwner: Player = game:GetService("Players"):FindFirstChild(unit.Owner)
             if not plrOwner then warn("Unknown Player Action") return end
             FH.ClientMessage({
-                action = 1,
+                action = MACROS.PLAYER_INPUT,
                 send = id,
                 receive = plrOwner,
                 unitData = unit
@@ -254,7 +251,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
     -- Handler
     FH.RegisterServer(id, MACROS.TAKE_DAMAGE, TakeDamage)
-    FH.RegisterServer(id, MACROS.ACTION, Action)
+    FH.RegisterServer(id, MACROS.UNIT_ACTION, Action)
 
     FH.RegisterClient(id, MACROS.FINISH_ACTION, FinishAction)
     FH.RegisterClient(id, MACROS.ATTACK_ACTION, AttackAction)

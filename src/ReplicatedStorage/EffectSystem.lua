@@ -4,6 +4,10 @@ local FH = require(RS:WaitForChild("FunctionHandler"))
 local EffectSystem = {}
 EffectSystem.__index = EffectSystem
 
+local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
+type Macros = GAME_DATA.Macros
+local MACROS: Macros = GAME_DATA.MACROS
+
 export type EffectSystemType = {
     unit: {},
     unitUI: {}, -- UiSystem.lua
@@ -73,7 +77,7 @@ function EffectSystem:ExecuteEffect()
             local dmg: number? = effect.Damage
             if dmg == nil then return end
             FH.ServerMessage({
-                action = 4,
+                action = MACROS.TAKE_DAMAGE,
                 send = self.id,
                 receive = self.id,
                 skillList = { Nature = 3, Damage = dmg },
@@ -82,9 +86,9 @@ function EffectSystem:ExecuteEffect()
 
         task.spawn(function() -- Heal
             local heal: number? = effect.HealConst
-            if heal == nil and effect.HealPercent == nil then return end -- TODO: HealPercent-only heal
+            if heal == nil and effect.HealPerc == nil then return end -- TODO: HealPercent-only heal
             FH.ServerMessage({
-                action = 4,
+                action = MACROS.TAKE_DAMAGE,
                 send = self.id,
                 receive = self.id,
                 skillList = { Nature = 3, Damage = -heal },

@@ -28,23 +28,23 @@ function module.ServerScript()
     local function InitialiseEnemy() -- Create enemies for start of level
         task.wait(0.5) -- Wait for all the require
         FH.ServerMessage({
-            action = 5,
+            action = MACROS.SUMMON_UNIT,
             send = 0,
             receive = 0,
             unitTypeNum = 1,
-            unitTeam = "Ememy",
+            unitTeam = "Enemy",
             unitOwner = "ai",
         })
         FH.ServerMessage({
-            action = 5,
+            action = MACROS.SUMMON_UNIT,
             send = 0,
             receive = 0,
             unitTypeNum = 2,
-            unitTeam = "Ememy",
+            unitTeam = "Enemy",
             unitOwner = "ai",
         })
         FH.ServerMessage({
-            action = 5,
+            action = MACROS.SUMMON_UNIT,
             send = 0,
             receive = 0,
             unitTypeNum = 3,
@@ -65,12 +65,12 @@ function module.ServerScript()
     local function StartGame()
         task.wait(1) -- Wait for everything to spawn in
         FH.ServerMessage({ -- Order Units
-            action = 3,
+            action = MACROS.ORDER_UNITS,
             send = 0,
             receive = 0,
         })
         FH.ServerMessage({ -- Start Game
-            action = 1,
+            action = MACROS.ROUND_COUNTER,
             send = 0,
             receive = 0,
         })
@@ -87,7 +87,7 @@ function module.ServerScript()
                 sharedList.actionNumber -= 1 -- Consider summoned acted
             end
         end
-        if data.mode == -1 then DecreaseOrder() end
+        if data.mode == -1 then DecreaseOrder() end -- Unit Removed
 
         local dexList = {}
         for unitId, unitList in pairs(sharedList.unitList) do
@@ -116,25 +116,24 @@ function module.ServerScript()
                 sharedList.actionNumber += 1 -- Consider summoned acted
             end
         end
-        if data.mode == 1 then IncreaseOrder() end
+        if data.mode == 1 then IncreaseOrder() end -- Unit Added
     end
 
     local function RoundCounter()
-        if sharedList.actionNumber > sharedList.totalUnits then
+        if sharedList.actionNumber > sharedList.totalUnits then -- Next round
             sharedList.roundNumber += 1
             sharedList.actionNumber = 1
 
             task.wait(1)
             print("Next Round")
             FH.ServerMessage({
-                action = 1,
+                action = MACROS.ROUND_COUNTER,
                 send = 0,
                 receive = 0,
             })
-        else
-            print("Server Action", sharedList)
+        else -- Next unit
             FH.ServerMessage({
-                action = 7,
+                action = MACROS.UNIT_ACTION,
                 send = 0,
                 receive = sharedList.actionOrder[sharedList.actionNumber],
             })
@@ -144,7 +143,7 @@ function module.ServerScript()
 
     local function RemoveUnit(data)
         FH.ServerMessage({
-            action = 3,
+            action = MACROS.ORDER_UNITS,
             send = 0,
             receive = 0,
             unit = data.send, -- Prevent skip over next unit
@@ -186,7 +185,7 @@ function module.ServerScript()
         require(UNIT).UnitScript(part, dataList, idCounter)
 
         FH.ServerMessage({
-            action = 3,
+            action = MACROS.ORDER_UNITS,
             send = 0,
             receive = 0,
             unit = idCounter, -- For counter to know which unit is summoned, prevent same unit run twice

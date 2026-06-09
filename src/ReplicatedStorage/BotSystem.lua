@@ -1,3 +1,8 @@
+local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
+local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
+type Macros = GAME_DATA.Macros
+local MACROS: Macros = GAME_DATA.MACROS
+
 local BotSystem = {}
 BotSystem.__index = BotSystem
 
@@ -32,13 +37,17 @@ function BotSystem:ChooseAction(sharedList: {}): { skillList: {}, target: (numbe
     local attackList: {number} = self.unit.Skills
     local attackAction = self.attackActions[attackList[math.random(1, #attackList)]]
 
-    if attackAction.Target == 1 then
+    if not next(enemyIdList) then warn("All Enemies Died") return end
+    if not next(allyIdList) then warn("All Allies Died") return end
+    if attackAction.Target == MACROS.SINGLE_ENEMY_ATTACK then
         return { skillList = attackAction, target = enemyIdList[math.random(1, #enemyIdList)] }
-    elseif attackAction.Target == 2 then
+    elseif attackAction.Target == MACROS.SINGLE_ALLY_ATTACK then
         return { skillList = attackAction, target = allyIdList[math.random(1, #allyIdList)] }
-    elseif attackAction.Target == -1 then
+    elseif attackAction.Target == MACROS.ALL_ENEMY_ATTACK then
         return { skillList = attackAction, target = enemyIdList }
-    elseif attackAction.Target == 0 then
+    elseif attackAction.Target == MACROS.ALL_ALLY_ATTACK then
+        return { skillList = attackAction, target = allyIdList }
+    elseif attackAction.Target == MACROS.SUMMON_ATTACK then
         return { skillList = attackAction, target = nil }
     end
 

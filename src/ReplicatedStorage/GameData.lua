@@ -8,7 +8,7 @@ local MACROS = {
     TAKE_DAMAGE = 4,
     SUMMON_UNIT = 5,
     REMOVE_UNIT = 6,
-    ACTION = 7,
+    UNIT_ACTION = 7,
     -- Server -> Client Actions
     DISPLAY_NOTIFICATION = -2,
     PLAYER_INPUT = 1,
@@ -16,7 +16,16 @@ local MACROS = {
     -- Client -> Server Actions
     FINISH_ACTION = 2,
     ATTACK_ACTION = 3,
-    APPLY_DAMAGE = 4
+    APPLY_DAMAGE = 4,
+    -- Target
+    SELF_ATTACK = -1,
+    SUMMON_ATTACK = 0,
+    SINGLE_ENEMY_ATTACK = 1,
+    MULTIPLE_ENEMY_ATTACK = 2,
+    ALL_ENEMY_ATTACK = 3,
+    SINGLE_ALLY_ATTACK = 4,
+    MULTIPLE_ALLY_ATTACK = 5,
+    ALL_ALLY_ATTACK = 6,
 }
 
 export type EffectVariable = {
@@ -59,42 +68,42 @@ local attackActions: AttackAction = {
         Name = "Scream",
         Damage = 2,
         Nature = 1,
-        Target = -1,
+        Target = MACROS.ALL_ENEMY_ATTACK,
         Effect = nil
     },
     [2] = {
         Name = "Stab",
         Damage = 5,
         Nature = 1,
-        Target = 1,
+        Target = MACROS.SINGLE_ENEMY_ATTACK,
         Effect = nil
     },
     [3] = {
         Name = "Bump",
         Damage = 3,
         Nature = 1,
-        Target = 1,
+        Target = MACROS.SINGLE_ENEMY_ATTACK,
         Effect = nil
     },
     [4] = {
         Name = "Heal",
         Damage = -2,
         Nature = 2,
-        Target = 2,
+        Target = MACROS.SINGLE_ALLY_ATTACK,
         Effect = { Name = "Regeneration", Duration = 2, HealConst = 1 }
     },
     [5] = {
         Name = "Poison",
         Damage = 1,
         Nature = 2,
-        Target = 1,
+        Target = MACROS.SINGLE_ENEMY_ATTACK,
         Effect = { Name = "Poison", Duration = 3, Damage = 1 }
     },
     [6] = {
         Name = "Mitosis",
         Damage = 2,
         Nature = 2,
-        Target = 0,
+        Target = MACROS.SUMMON_ATTACK,
         Effect = nil
     },
 }
