@@ -34,7 +34,7 @@ Framework for a turn-based game that can be used as a base with high degrees of 
     ```lua
     -- ClientAction: RemoteFunction (data: list)
     data = {
-        action: number -- {-2: Transfer Notification, -1: Transfer Data; 1: PlayerAct, 2: Rest, 3: AttackAction, 4: AttackTarget}
+        action: number -- {-2: Transfer Notification, -1: (DEP); 1: PlayerAct, 2: Rest, 3: AttackAction, 4: AttackTarget}
         send: number -- id / plr
         receive: number -- plr | plr table / id
         -- misc. data
@@ -51,16 +51,29 @@ Framework for a turn-based game that can be used as a base with high degrees of 
     ```
 - `Status Effects` uses a `.Effect: {}` list to contains all the status effect in `unitList[id]`, it is a string indexed list with the following keys for mapping
     ``` lua
-    {
-        [0] = "effectId" -- Pairs effectGui with effect in unitList; used within a unit
-        [1] = "Name", [2] = "Duration",
-        [3] = "Damage", [4] = "DamageAdd", [5] = "DamageMult",
-        [6] = "HealConst", [7] = "HealPercent", [8] = "HealAdd", [9] = "HealMult",
-        [10] = "AttackAdd", [11] = "AttackMult",
-        [12] = "OneAdd", [13] = "OneMult",
-        [14] = "TwoAdd", [14] = "TwoMult",
-        [15] = "ThreeAdd", [16] = "ThreeMult",
-    }
+    [0] = "EffectId",
+    [1] = "Name",
+    [2] = "Duration",
+    -- Constant Damage
+    [3] = "Damage",
+    [4] = "DamageAdd",
+    [5] = "DamageMult",
+    -- Constant Heal
+    [6] = "HealConst",
+    [7] = "HealPerc",
+    [8] = "HealAdd",
+    [9] = "HealMult",
+    -- Damage Buff
+    [10] = "AttackAdd",
+    [11] = "AttackMult",
+    -- Attack Nature Buff
+    [12] = "OneAdd",
+    [13] = "OneMult",
+    [14] = "TwoAdd",
+    [15] = "TwoMult",
+    [16] = "ThreeAdd",
+    [17] = "ThreeMult",
+    -- TODO: Heal Buff
     ```
 # TODO
 - [ ] Smart bot action

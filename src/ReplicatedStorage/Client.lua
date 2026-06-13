@@ -3,26 +3,23 @@ local module = {}
 local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TWS: TweenService = game:GetService("TweenService")
 
-local clientAction: RemoteFunction = (RS:FindFirstChild("ClientAction") :: RemoteFunction?) or Instance.new("RemoteFunction")
-    clientAction.Name = "ClientAction"
-    clientAction.Parent = RS
-local clientFuncList = {}
-
 -- Data
-local dataList = {}
+local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
+type AttackAction = GAME_DATA.AttackAction
+type UnitType = GAME_DATA.UnitType
+type Macros = GAME_DATA.Macros
+local attackActions: AttackAction = GAME_DATA.attackActions
+local unitTypes: UnitType = GAME_DATA.unitTypes
+local MACROS: Macros = GAME_DATA.MACROS
+
+-- Shared
+local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
+local sharedList: SHARED_LIST.SharedList = SHARED_LIST
+
+-- Package
+local FH = require(RS:WaitForChild("FunctionHandler"))
 
 function module.Init(plr)
-    -- Fill Data
-    clientAction:InvokeServer({
-        action = -1,
-        send = plr,
-        receive = 0,
-    })
-    local function RecieveData(data)
-        dataList = data.dataList
-        print(plr, dataList)
-    end
-
     -- GUI
     local function CreateGui(): {Instance}
         local screenGui: ScreenGui = Instance.new("ScreenGui")
@@ -77,41 +74,41 @@ function module.Init(plr)
         notificationLabel.RichText = true
 
         return {
-            [1] = screenGui,
-            [2] = passButton,
-            [3] = attackButton,
-            [4] = actionFrame,
-            [5] = attackActionFrame,
-            [6] = targetFrame,
-            [7] = notificationFrame,
-            [8] = notificationLabel,
+            ["ScreenGui"] = screenGui,
+            ["PassButton"] = passButton,
+            ["AttackButton"] = attackButton,
+            ["ActionFrame"] = actionFrame,
+            ["AttackActionFrame"] = attackActionFrame,
+            ["TargetFrame"] = targetFrame,
+            ["NotificationFrame"] = notificationFrame,
+            ["NotificationLabel"] = notificationLabel,
         }
     end
     local guiInstances: {Instance} = CreateGui()
 
     -- GUI Functions
     local unitId: number = 0
-    guiInstances[2].Activated:Connect(function()
-        guiInstances[4].Visible = false
-        clientAction:InvokeServer({
-            action = 2,
+    guiInstances.PassButton.Activated:Connect(function()
+        guiInstances.ActionFrame.Visible = false
+        FH.ClientMessage({
+            action = MACROS.FINISH_ACTION,
             send = plr,
             receive = unitId
         })
     end)
-    guiInstances[3].Activated:Connect(function()
-        guiInstances[4].Visible = false
-        clientAction:InvokeServer({
-            action = 3,
+    guiInstances.AttackButton.Activated:Connect(function()
+        guiInstances.ActionFrame.Visible = false
+        FH.ClientMessage({
+            action = MACROS.ATTACK_ACTION,
             send = plr,
             receive = unitId,
         })
     end)
 
     local function PlayerInput(data)
-        local unitData = data.unitData or nil
-        unitId = data.send or nil
-        guiInstances[4].Visible = true
+        local unitData = data.unitData
+        unitId = data.send -- Update Id of the unit controlling
+        guiInstances.ActionFrame.Visible = true
 
         print("Player Received", unitId, unitData)
         -- TODO: UI Management with unitData
@@ -130,8 +127,8 @@ function module.Init(plr)
         if msg.skill.Nature == 3 then return end -- No notification for 3: effect
 
         -- Create new notification
-        local notif: TextLabel = guiInstances[8]:Clone()
-        notif.Parent = guiInstances[7]
+        local notif: TextLabel = guiInstances.NotificationLabel:Clone()
+        notif.Parent = guiInstances.NotificationFrame
 
         local function FadeOut()
             local FADE_TIME: number = 1
@@ -153,8 +150,7 @@ function module.Init(plr)
         -- TODO: If overflow, then FadeOut() the oldest one
 
         local function Decay()
-            task.wait(5) -- Decay time
-            FadeOut()
+            task.delay(5, FadeOut)
         end
         task.spawn(Decay)
 
@@ -173,70 +169,60 @@ function module.Init(plr)
     end
 
     local function AttackEnemy(skill, enemyList, allyList) -- enemyList is numbered, skill is string-indexed with Name
-        if skill.Target == 1 then -- Single Attack
-            for _, enemy in ipairs(enemyList) do
+        local targetList: {[number]: number} = {}
+        local allyTarBoolList = {
+            [MACROS.SINGLE_ALLY_ATTACK] = true,
+            [MACROS.MULTIPLE_ALLY_ATTACK] = true,
+            [MACROS.ALL_ALLY_ATTACK] = true,
+        }
+        if allyTarBoolList[skill.Target] then targetList = allyList
+        else targetList = enemyList end
+
+        if skill.Target == MACROS.SINGLE_ENEMY_ATTACK or skill.Target == MACROS.SINGLE_ALLY_ATTACK then
+
+            for _, target in ipairs(targetList) do
                 local button: TextButton = Instance.new("TextButton")
-                button.Parent = guiInstances[6]
-                button.Text = enemy.Name
+                button.Parent = guiInstances.TargetFrame
+                button.Text = target.Name
                 button.Size = UDim2.fromScale(0.1, 1)
 
                 button.Activated:Connect(function()
-                    guiInstances[6].Visible = false
-                    clientAction:InvokeServer({
-                        action = 4,
+                    guiInstances.TargetFrame.Visible = false
+                    FH.ClientMessage({
+                        action = MACROS.APPLY_DAMAGE,
                         send = plr,
                         receive = unitId,
                         skillList = skill,
-                        target = enemy.Id,
+                        target = target.Id,
                     })
-                    RemoveChildUI(guiInstances[6])
+                    RemoveChildUI(guiInstances.TargetFrame)
                 end)
             end
-            guiInstances[6].Visible = true
-        elseif skill.Target == 2 then
-            for _, ally in ipairs(allyList) do
-                local button: TextButton = Instance.new("TextButton")
-                button.Parent = guiInstances[6]
-                button.Text = ally.Name
-                button.Size = UDim2.fromScale(0.1, 1)
-
-                button.Activated:Connect(function()
-                    guiInstances[6].Visible = false
-                    clientAction:InvokeServer({
-                        action = 4,
-                        send = plr,
-                        receive = unitId,
-                        skillList = skill,
-                        target = ally.Id,
-                    })
-                    RemoveChildUI(guiInstances[6])
-                end)
-            end
-            guiInstances[6].Visible = true
-        elseif skill.Target == -1 then -- Area Attack
-            -- Get enemy Id
+            guiInstances.TargetFrame.Visible = true
+        elseif skill.Target == MACROS.ALL_ENEMY_ATTACK or skill.Target == MACROS.ALL_ALLY_ATTACK then
             local targetIdList = {}
-            for _, enemy in ipairs(enemyList) do
-                table.insert(targetIdList, enemy.Id)
+
+            for _, target in ipairs(targetList) do
+                table.insert(targetIdList, target.Id)
             end
 
-            clientAction:InvokeServer({
-                action = 4,
+            FH.ClientMessage({
+                action = MACROS.APPLY_DAMAGE,
                 send = plr,
                 receive = unitId,
                 skillList = skill,
                 target = targetIdList, -- -1: All enemies
             })
-        elseif skill.Target ==  0 then -- Spawn Ally Unit
-            clientAction:InvokeServer({
-                action = 4,
+        elseif skill.Target == MACROS.SUMMON_ATTACK then -- Spawn Ally Unit
+            FH.ClientMessage({
+                action = MACROS.APPLY_DAMAGE,
                 send = plr,
                 receive = unitId,
                 skillList = skill,
                 -- TODO: Add target = "Team Name" which spawns the unit into a team -> .Target = 0: Summon General Unit
             })
         else warn("Unknown Target Range") return end
-        RemoveChildUI(guiInstances[5])
+        RemoveChildUI(guiInstances.AttackActionFrame)
     end
 
     local function ChooseAttackTarget(data) -- client 4
@@ -244,37 +230,29 @@ function module.Init(plr)
 
         local skillList = {}
         for _, skillNum in ipairs(data.skillList) do
-            table.insert(skillList, dataList.attackActionList[skillNum])
+            table.insert(skillList, attackActions[skillNum])
         end
 
-        local skillNames: {string} = {}
-        for _, skill in ipairs(skillList) do table.insert(skillNames, skill.Name) end
-
-        for num, name in ipairs(skillNames) do
+        for _, skill in ipairs(skillList) do
             local button: TextButton = Instance.new("TextButton")
-            button.Parent = guiInstances[5]
-            button.Text = name
+            button.Parent = guiInstances.AttackActionFrame
+            button.Text = skill.Name
             button.Size = UDim2.fromScale(0.1, 1)
 
             button.Activated:Connect(function()
-                AttackEnemy(skillList[num], data.enemyList, data.allyList) -- skillList and skillNames must line up
-                guiInstances[5].Visible = false
+                AttackEnemy(skill, data.enemyList, data.allyList) -- skillList and skillNames must line up
+                guiInstances.AttackActionFrame.Visible = false
                 return
             end)
         end
 
-        guiInstances[5].Visible = true
+        guiInstances.AttackActionFrame.Visible = true
     end
 
-    clientAction.OnClientInvoke = function(data)
-        if data.receive ~= plr then return end
-
-        -- TODO: Create check function like executeFunction()
-        if (data.action == -2) then DisplayNotification(data) end
-        if (data.action == -1) then RecieveData(data) end
-        if (data.action == 1) then PlayerInput(data) end
-        if (data.action == 4) then ChooseAttackTarget(data) end
-    end
+    -- Handler
+    FH.RegisterClient(plr, MACROS.DISPLAY_NOTIFICATION, DisplayNotification)
+    FH.RegisterClient(plr, MACROS.PLAYER_INPUT, PlayerInput)
+    FH.RegisterClient(plr, MACROS.CHOOSE_ATTACK_TARGET, ChooseAttackTarget)
 end
 
 return module
