@@ -1,80 +1,30 @@
 # Turn-based Game Framework
-Framework for a turn-based game that can be used as a base with high degrees of freedom for customisation.
+Framework for a turn-based game that can be used as a base before customisation.
 
 # Version
-**Latest stable** — `1104c39` (main)
-- Customisable units and attacks (including effects)
-- Randomised bot actions
-- Turn-based actions
-- Expanded capabilities of effects (attacks, buffs, healing)
-
-**In development**
-- Refactoring `Server.lua` into focused modules (`UnitScript`, `SharedState`, `GameData`)
+**Latest stable** — `9564f7b` (main)
+- Refactored scripts into shorter modules
 
 # Mechanism
-- Two module scripts `Server.lua` and `Client.lua`
-    - `Server.lua` handles server-sided logic and is **OOP** for each unit
-    - `Client.lua` handles client-sided logic which allows players to act
-- Two modules scripts communicate to each other (within and away) using Functions
+- Server <-> Server and Server <-> Client communicate using the `FunctionHandler.lua` module
+    - `Register(id, action, function)` records the function, which can be called using the number `action` to the number `id`
+    - `ServerMessage()` and `ClientMessage()` then calls the registered functions
+
+- Server <-> Client communicate to each other (within and away) using Functions in `FunctionHandler.lua`
     > Functions are used as it yields, so Roblox does not tries to run everything at once; however, Functions can only bound one function, so a handler is created to multi-thread.
-
-    > The output of functions are not used yet, but can be
-
-    - `ServerAction` is within `Server.lua` to tell units to act.
-    ```lua
-    -- ServerAction: BindableFunction (data: list)
-    data = {
-        action: number -- {1: Next, 2: Round, 3: Reorder, 4: Damage, 5: Add, 6: Death, 7: Act}
-        send: number -- id
-        receive: number -- id | id table
-        -- misc. data
-    }
-    ```
-    - `ClientAction` is used to communicate between `Server.lua` and `Client.lua`
+    - `ClientAction` is used to communicate between Server and Client
     ```lua
     -- ClientAction: RemoteFunction (data: list)
     data = {
         action: number -- {-2: Transfer Notification, -1: (DEP); 1: PlayerAct, 2: Rest, 3: AttackAction, 4: AttackTarget}
-        send: number -- id / plr
-        receive: number -- plr | plr table / id
+        send: number | Player
+        receive: number | Player
         -- misc. data
     }
-- `ApplyDamage(): function` reads `data.skillList.Target` to communicate its action, and then expects a format in the package: set in the Data list of `attackActionList`
-    ``` lua
-    data = {
-        skillList = {
-            Nature: "number", -- Target chooses type of effect affecting the attack: eg) {[1] = "Physical", [2] = "Magical", [3]="Effect"}
+    ```
 
-            Target: "number", -- skillList.Target = { -3: All Attack, -2: Enemy Area Attack, -1: All Enemy Attack, 0: Summon Unit, 1: Single Attack, 2: Ally Attack, 3: All Ally Attack, 4: Self Attack}
-        }
-    }
-    ```
-- `Status Effects` uses a `.Effect: {}` list to contains all the status effect in `unitList[id]`, it is a string indexed list with the following keys for mapping
-    ``` lua
-    [0] = "EffectId",
-    [1] = "Name",
-    [2] = "Duration",
-    -- Constant Damage
-    [3] = "Damage",
-    [4] = "DamageAdd",
-    [5] = "DamageMult",
-    -- Constant Heal
-    [6] = "HealConst",
-    [7] = "HealPerc",
-    [8] = "HealAdd",
-    [9] = "HealMult",
-    -- Damage Buff
-    [10] = "AttackAdd",
-    [11] = "AttackMult",
-    -- Attack Nature Buff
-    [12] = "OneAdd",
-    [13] = "OneMult",
-    [14] = "TwoAdd",
-    [15] = "TwoMult",
-    [16] = "ThreeAdd",
-    [17] = "ThreeMult",
-    -- TODO: Heal Buff
-    ```
+- Permanent game data is stored in `GameData.lua`. Changing game data is stored in `SharedList.lua`
+
 # TODO
 - [ ] Smart bot action
 - [ ] Animation Handler
@@ -84,5 +34,3 @@ Framework for a turn-based game that can be used as a base with high degrees of 
 
 # Credits
 - FireAlexGame
-
-VSCode to Roblox Studio using **Rojo 7.5.1**
