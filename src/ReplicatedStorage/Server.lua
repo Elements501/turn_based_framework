@@ -1,4 +1,4 @@
-local module = {}
+﻿local module = {}
 -- Services
 local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PS: Players = game:GetService("Players")
@@ -10,9 +10,9 @@ local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
 type AttackAction = GAME_DATA.AttackAction
 type UnitType = GAME_DATA.UnitType
 type Macros = GAME_DATA.Macros
-local attackActions: AttackAction = table.clone(GAME_DATA.attackActions)
-local unitTypes: UnitType = table.clone(GAME_DATA.unitTypes)
-local MACROS: Macros = table.clone(GAME_DATA.MACROS)
+local attackActions: AttackAction = GAME_DATA.attackActions
+local unitTypes: UnitType = GAME_DATA.unitTypes
+local MACROS: Macros = GAME_DATA.MACROS
 
 -- Shared
 local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
@@ -26,39 +26,21 @@ function module.ServerScript()
     local idCounter: number = 1
 
     local function InitialiseEnemy() -- Create enemies for start of level
+        local function SpawnUnit(type: number, team: string, owner: Player | string): ()
+        FH.ServerMessage({
+            action = MACROS.SUMMON_UNIT,
+            send = 0,
+            receive = 0,
+            unitTypeNum = type,
+            unitTeam = team,
+            unitOwner = owner,
+        })
+        end
         task.wait(0.5) -- Wait for all the require
-        FH.ServerMessage({
-            action = MACROS.SUMMON_UNIT,
-            send = 0,
-            receive = 0,
-            unitTypeNum = 1,
-            unitTeam = "Enemy",
-            unitOwner = "ai",
-        })
-        FH.ServerMessage({
-            action = MACROS.SUMMON_UNIT,
-            send = 0,
-            receive = 0,
-            unitTypeNum = 2,
-            unitTeam = "Enemy",
-            unitOwner = "ai",
-        })
-        FH.ServerMessage({
-            action = MACROS.SUMMON_UNIT,
-            send = 0,
-            receive = 0,
-            unitTypeNum = 3,
-            unitTeam = "Ally",
-            unitOwner = "FireAlexGame",
-        })
-        FH.ServerMessage({
-            action = 5,
-            send = 0,
-            receive = 0,
-            unitTypeNum = 4,
-            unitTeam = "Ally",
-            unitOwner = "FireAlexGame",
-        })
+        SpawnUnit(1, "Enemy", "ai")
+        SpawnUnit(2, "Enemy", "ai")
+        SpawnUnit(3, "Ally", "FireAlexGame")
+        SpawnUnit(4, "Ally", "FireAlexGame")
     end
     task.spawn(InitialiseEnemy)
 
@@ -79,15 +61,16 @@ function module.ServerScript()
 
     -- Server Actions
     local function OrderUnits(data)
-        local function DecreaseOrder() -- To prevent skip over next unit
+
+        local function ChangeOrder(mode: number) -- To prevent skip over next unit
             local unitId: number = data.unit
             if unitId == nil then warn("Unknown Unit Deleted") return end
 
             if table.find(sharedList.actionOrder, unitId) < sharedList.actionNumber then -- Unit act before now
-                sharedList.actionNumber -= 1 -- Consider summoned acted
+                sharedList.actionNumber += mode -- Consider summoned acted
             end
         end
-        if data.mode == -1 then DecreaseOrder() end -- Unit Removed
+        if data.mode == -1 then ChangeOrder(-1) end -- Unit Removed
 
         local dexList = {}
         for unitId, unitList in pairs(sharedList.unitList) do
@@ -108,15 +91,7 @@ function module.ServerScript()
         end
         sharedList.actionOrder = orderedList
 
-        local function IncreaseOrder() -- To prevent same unit run twice
-            local unitId: number = data.unit
-            if unitId == nil then warn("Unknown Unit Added") return end
-
-            if table.find(sharedList.actionOrder, unitId) < sharedList.actionNumber then -- Unit act before now
-                sharedList.actionNumber += 1 -- Consider summoned acted
-            end
-        end
-        if data.mode == 1 then IncreaseOrder() end -- Unit Added
+        if data.mode == 1 then ChangeOrder(1) end -- Unit Added
     end
 
     local function RoundCounter()
@@ -156,14 +131,7 @@ function module.ServerScript()
     end
 
     local function SummonUnit(data)
-        local unitNum: number = nil -- Summoned: .Attack; Server: .unitTypeNum
-        if not data.skillList then
-            unitNum = data.unitTypeNum
-        elseif not data.skillList.Damage then
-            unitNum = data.unitTypeNum
-        else
-            unitNum = data.skillList.Damage
-        end
+        local unitNum: number = (data.skillList and data.skillList.Damage) or data.unitTypeNum
         if unitNum == nil then warn("Unknown Unit Number: ", data) return end
 
         if unitTypes[unitNum] == nil then warn("Out of Range: ", unitNum) return end -- No unit existed in list

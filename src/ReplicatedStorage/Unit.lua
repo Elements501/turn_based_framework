@@ -35,10 +35,15 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         local baseStat = unitTypes[metadata.unitTypeNum]
         if not baseStat then warn("Unknown unitTypeNum", metadata and metadata.unitTypeNum) return false end
 
-        local unitData = {}
-        for key, value in pairs(baseStat) do
-            unitData[key] = value
+        local function DeepCopy(original: {})
+            local copy = {}
+            for key, value in pairs(original) do
+                copy[key] = if type(value) == "table" then DeepCopy(value) else value
+            end
+            return copy
         end
+
+        local unitData = DeepCopy(baseStat)
         unitData.Team = metadata.Team
         unitData.Owner = metadata.Owner
         unitData.Id = id
@@ -80,15 +85,12 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
         local enemyList = {}
         local allyList = {}
-        -- Obtain Enemies
         for _, unitChecked in pairs(sharedList.unitList) do
-            if unitChecked.Team == unit.Team then continue end
-            table.insert(enemyList, unitChecked)
-        end
-        -- Obtain Allies
-        for _, unitChecked in pairs(sharedList.unitList) do
-            if unitChecked.Team ~= unit.Team then continue end
-            table.insert(allyList, unitChecked)
+            if unitChecked.Team == unit.Team then
+                table.insert(allyList, unitChecked)
+            else
+                table.insert(enemyList, unitChecked)
+            end
         end
 
         FH.ClientMessage({
@@ -161,21 +163,17 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         local damage: number? = data.skillList.Damage
         local nature: number? = data.skillList.Nature
 
-        local function GetEffect(key)
-            return unitEffect:GetEffect(key)
-        end
-
         local function GetNatureModifier(): ()->(number, number, number)
             local add: number; local mult: number; local natureBuff: number
 
             if nature == 1 then
-                add = GetEffect("PhyAdd") or 0; mult = GetEffect("PhyMult") or 1
+                add = unitEffect:GetEffect("PhyAdd") or 0; mult = unitEffect:GetEffect("PhyMult") or 1
                 natureBuff = unit.Power
             elseif nature == 2 then
-                add = GetEffect("MagicAdd") or 0; mult = GetEffect("MagicMult") or 1
+                add = unitEffect:GetEffect("MagicAdd") or 0; mult = unitEffect:GetEffect("MagicMult") or 1
                 natureBuff = 0 -- TODO
             elseif nature == 3 then
-                add = GetEffect("EffectAdd") or 0; mult = GetEffect("EffectMult") or 1
+                add = unitEffect:GetEffect("EffectAdd") or 0; mult = unitEffect:GetEffect("EffectMult") or 1
                 natureBuff = 0 -- TODO
             end
 
@@ -183,8 +181,8 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         end
 
         if damage >= 0 then -- Dealing damage
-            local attackAdd = GetEffect("AttackAdd") or 0
-            local attackMult = GetEffect("AttackMult") or 1
+            local attackAdd = unitEffect:GetEffect("AttackAdd") or 0
+            local attackMult = unitEffect:GetEffect("AttackMult") or 1
 
             local add: number, mult: number, natureBuff: number = GetNatureModifier()
 
@@ -192,9 +190,9 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
 
         elseif damage < 0 then -- Doing healing
             local heal = -damage
-            local healPerc = GetEffect("HealPerc") or 0
-            local healAdd = GetEffect("HealAdd") or 0
-            local healMult = GetEffect("HealMult") or 1
+            local healPerc = unitEffect:GetEffect("HealPerc") or 0
+            local healAdd = unitEffect:GetEffect("HealAdd") or 0
+            local healMult = unitEffect:GetEffect("HealMult") or 1
 
             local add: number, mult: number, natureBuff: number = GetNatureModifier()
 

@@ -69,8 +69,8 @@ function EffectSystem:ExecuteEffect()
     local effectList = self.unit.Effect
     if not next(effectList) then return end
 
-    for _, effect in ipairs(effectList) do
-        if effect.Duration <= 0 then effect.Duration = 0 return end
+    for _, effect in pairs(effectList) do
+        if effect.Duration <= 0 then effect.Duration = 0 return end -- TODO: Change when .Duration = -1
         print("Effect Executed", self.id, effect)
 
         task.spawn(function() -- Damage

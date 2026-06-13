@@ -58,7 +58,7 @@ export type AttackAction = {
         Name: string,
         Damage: number,
         Nature: number,
-        Traget: number,
+        Target: number,
         Effect: EffectVariable?
     }
 }
