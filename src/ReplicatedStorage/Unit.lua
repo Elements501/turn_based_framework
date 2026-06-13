@@ -5,12 +5,9 @@ local PS: Players = game:GetService("Players")
 
 -- Data
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
-type AttackAction = GAME_DATA.AttackAction
-type UnitType = GAME_DATA.UnitType
-type Macros = GAME_DATA.Macros
-local attackActions: AttackAction = GAME_DATA.attackActions
-local unitTypes: UnitType = GAME_DATA.unitTypes
-local MACROS: Macros = GAME_DATA.MACROS
+local attackActions: GAME_DATA.AttackAction = GAME_DATA.attackActions
+local unitTypes: GAME_DATA.UnitType = GAME_DATA.unitTypes
+local MACROS: GAME_DATA.Macros = GAME_DATA.MACROS
 
 -- Shared
 local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
@@ -30,7 +27,7 @@ type UnitUi = UiSystem.UiSystemType
 function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     local unit: {} = sharedList.unitList[id]
     -- Initialisation
-    local function updateList(): boolean -- Check in onto the sharedList as a Unit
+    local function UpdateList(): boolean -- Check in onto the sharedList as a Unit
         -- Check In
         local baseStat = unitTypes[metadata.unitTypeNum]
         if not baseStat then warn("Unknown unitTypeNum", metadata and metadata.unitTypeNum) return false end
@@ -55,7 +52,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         print(sharedList.unitList)
         return true
     end
-    if not updateList() then warn("Failed to Check In") return end -- Run check in with False -> ERROR
+    if not UpdateList() then warn("Failed to Check In") return end -- Run check in with False -> ERROR
 
     -- FH.ServerMessage({ -- TODO: Make units automatically add to id: 0, instead of FindUnits()
     --     action = 5,
@@ -66,7 +63,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     -- Modules
     local unitUI: UnitUi = UiSystem.new(part, unit)
     local unitEffect: Effect = EffectSystem.new(unit, unitUI, id)
-    local botAction: botAction = BotSystem.new(unit, attackActions, id)
+    local botAction: botAction = BotSystem.new(unit, id)
 
     -- Unit Action
     local function FinishAction() -- No event
@@ -97,7 +94,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             action = MACROS.CHOOSE_ATTACK_TARGET,
             send = id,
             receive = plrOwner,
-            Type = unit.Type, --TODO: Investigate what is this for
+            unitList = unit,
             enemyList = enemyList,
             allyList = allyList,
             skillList = unit.Skills,
@@ -105,7 +102,12 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     end
 
     local function ApplyDamage(data)
+        if unit.Energy < data.skillList.Energy then warn("Insufficient Energy") return end
+
         print("Attack Used: ", data.skillList, "; On unit:", data.target)
+        unit.Energy -= data.skillList.Energy
+        unitUI:UpdateEnergy()
+
         if data.skillList.Target == MACROS.SINGLE_ENEMY_ATTACK or data.skillList.Target == MACROS.SINGLE_ALLY_ATTACK then
             FH.ServerMessage({
                 action = MACROS.TAKE_DAMAGE,
@@ -205,8 +207,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
             unit.Health = unit.MaxHealth
             -- TODO: Indicate skills that can overheal
         end
-
-        unitUI:UpdateHealth(unit.Health, unit.MaxHealth)
+        unitUI:UpdateHealth()
 
         if unit.Health <= 0 then
             FH.ServerMessage({
@@ -225,6 +226,9 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         unitEffect:ExecuteEffect()
         if unit == nil then return end -- Unit died by effect
         unitEffect:DecreaseEffectDuration()
+
+        if unit.Energy < unit.MaxEnergy then unit.Energy += 1 end
+        unitUI:UpdateEnergy()
 
         if unit.Owner == "ai" then
             local action = botAction:ChooseAction(sharedList)

@@ -6,10 +6,13 @@ export type UiSystemType = {
     effectId: number,
     hpBar: Frame,
     hpText: TextLabel,
+    energyBar: Frame,
+    energyText: TextLabel,
     effectFrame: Frame,
     effectTemplate: Frame,
     effectMap: { [number]: Frame },
     UpdateHealth: (self: UiSystemType) -> (),
+    UpdateEnergy: (self: UiSystemType) -> (),
     AddEffect: (self: UiSystemType, effect: {}) -> number,
     UpdateEffect: (self: UiSystemType, effectId: number, duration: number) -> (),
     RemoveEffect: (self: UiSystemType, effectId: number) -> (),
@@ -21,8 +24,8 @@ function UiSystem.new(part: BasePart, unit: {})
     topBar.Parent = part
     topBar.Adornee = part
     topBar.Name = "HpBar " .. unit.Id
-    topBar.Size = UDim2.fromScale(5, 2)
-    topBar.ExtentsOffset = Vector3.new(0, 6, 0)
+    topBar.Size = UDim2.fromScale(5, 2.5)
+    topBar.ExtentsOffset = Vector3.new(0, 3, 0)
 
     local listLayout: UIListLayout = Instance.new("UIListLayout")
     listLayout.Parent = topBar
@@ -34,7 +37,7 @@ function UiSystem.new(part: BasePart, unit: {})
     hpBackground.Name = "Health Bar"
     hpBackground.BackgroundColor3 = Color3.new(1, 1, 1)
     hpBackground.BackgroundTransparency = 0
-    hpBackground.Size = UDim2.fromScale(1, 0.5)
+    hpBackground.Size = UDim2.fromScale(1, 0.4)
     hpBackground.ZIndex = 0
     hpBackground.LayoutOrder = 2
 
@@ -47,7 +50,7 @@ function UiSystem.new(part: BasePart, unit: {})
     hpBar.ZIndex = 1
 
     local hpText: TextLabel = Instance.new("TextLabel")
-    hpText.Parent = hpBackground
+    hpText.Parent = hpBar
     hpText.Text = unit.Health .. " / " .. unit.MaxHealth
     hpText.TextColor3 = Color3.new(0.5, 0.5, 0.5)
     hpText.Size = UDim2.fromScale(1, 1)
@@ -55,11 +58,29 @@ function UiSystem.new(part: BasePart, unit: {})
     hpText.BackgroundTransparency = 1
     hpText.ZIndex = 2
 
+    -- Energy Bar
+    local energyBar: Frame = Instance.new("Frame")
+    energyBar.Parent = topBar
+    energyBar.BackgroundColor3 = Color3.new(0, 0, 0)
+    energyBar.BackgroundTransparency = 0
+    energyBar.Size = UDim2.fromScale(1, 0.2)
+    energyBar.ZIndex = 1
+    energyBar.LayoutOrder = 3
+
+    local energyText: TextLabel = Instance.new("TextLabel")
+    energyText.Parent = energyBar
+    energyText.Text = unit.Energy .. " / " .. unit.MaxEnergy
+    energyText.TextColor3 = Color3.new(1, 1, 1)
+    energyText.Size = UDim2.fromScale(1, 1)
+    energyText.TextScaled = true
+    energyText.BackgroundTransparency = 1
+    energyText.ZIndex = 2
+
     -- Status effect bar
     local effectFrame: Frame = Instance.new("Frame")
     effectFrame.Parent = topBar
     effectFrame.Name = "Status Bar"
-    effectFrame.Size = UDim2.fromScale(1, 0.5)
+    effectFrame.Size = UDim2.fromScale(1, 0.4)
     effectFrame.BackgroundTransparency = 1
     effectFrame.ZIndex = 0
     effectFrame.LayoutOrder = 1
@@ -98,6 +119,8 @@ function UiSystem.new(part: BasePart, unit: {})
         effectId = 1,
         hpBar = hpBar,
         hpText = hpText,
+        energyBar = energyBar,
+        energyText = energyText,
         effectFrame = effectFrame,
         effectTemplate = effectTemplate,
         effectMap = {},
@@ -107,6 +130,10 @@ end
 function UiSystem:UpdateHealth()
     self.hpText.Text = self.unit.Health .. " / " .. self.unit.MaxHealth
     self.hpBar.Size = UDim2.fromScale(self.unit.Health / self.unit.MaxHealth * 0.96, self.hpBar.Size.Y.Scale)
+end
+
+function UiSystem:UpdateEnergy()
+    self.energyText.Text = self.unit.Energy .. " / " .. self.unit.MaxEnergy
 end
 
 function UiSystem:AddEffect(effect: {}): number

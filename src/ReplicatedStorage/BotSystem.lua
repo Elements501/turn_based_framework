@@ -1,7 +1,7 @@
 local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
-type Macros = GAME_DATA.Macros
-local MACROS: Macros = GAME_DATA.MACROS
+local attackActions: GAME_DATA.AttackAction = GAME_DATA.attackActions
+local MACROS: GAME_DATA.Macros = GAME_DATA.MACROS
 
 local BotSystem = {}
 BotSystem.__index = BotSystem
@@ -9,15 +9,13 @@ BotSystem.__index = BotSystem
 export type BotSystemType = {
     unit: {},
     id: number,
-    attackActions: {},
     ChooseAction: (self: BotSystemType, sharedList: {}) -> { skillList: {}, target: (number | {number})? }?,
 }
 
-function BotSystem.new(unit: {}, attackActions: {}, id: number)
-    return setmetatable({ -- Get sum of the value of the effect variable -- Damage -- Heal
+function BotSystem.new(unit: {}, id: number)
+    return setmetatable({
         unit = unit,
         id = id,
-        attackActions = attackActions,
     }, BotSystem)
 end
 
@@ -35,10 +33,16 @@ function BotSystem:ChooseAction(sharedList: {}): { skillList: {}, target: (numbe
     end
 
     local attackList: {number} = self.unit.Skills
-    local attackAction = self.attackActions[attackList[math.random(1, #attackList)]]
+
+    -- Remove attacks with insufficient energy
+    for key, attackNum in pairs(attackList) do
+        if self.unit.Energy < attackActions[attackNum].Energy then table.remove(attackList, key) end
+    end
+    local attackAction = attackActions[attackList[math.random(1, #attackList)]]
 
     if not next(enemyIdList) then warn("All Enemies Died") return end
     if not next(allyIdList) then warn("All Allies Died") return end
+
     if attackAction.Target == MACROS.SINGLE_ENEMY_ATTACK then
         return { skillList = attackAction, target = enemyIdList[math.random(1, #enemyIdList)] }
     elseif attackAction.Target == MACROS.SINGLE_ALLY_ATTACK then

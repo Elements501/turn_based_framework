@@ -5,16 +5,9 @@ local TWS: TweenService = game:GetService("TweenService")
 
 -- Data
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
-type AttackAction = GAME_DATA.AttackAction
-type UnitType = GAME_DATA.UnitType
-type Macros = GAME_DATA.Macros
-local attackActions: AttackAction = GAME_DATA.attackActions
-local unitTypes: UnitType = GAME_DATA.unitTypes
-local MACROS: Macros = GAME_DATA.MACROS
-
--- Shared
-local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
-local sharedList: SHARED_LIST.SharedList = SHARED_LIST
+local attackActions: GAME_DATA.AttackAction = GAME_DATA.attackActions
+local unitTypes: GAME_DATA.UnitType = GAME_DATA.unitTypes
+local MACROS: GAME_DATA.Macros = GAME_DATA.MACROS
 
 -- Package
 local FH = require(RS:WaitForChild("FunctionHandler"))
@@ -168,7 +161,7 @@ function module.Init(plr)
         else warn("Unknown Notification") return end
     end
 
-    local function AttackEnemy(skill, enemyList, allyList) -- enemyList is numbered, skill is string-indexed with Name
+    local function ChooseAttackTarget(skill, enemyList, allyList) -- enemyList is numbered, skill is string-indexed with Name
         local targetList: {[number]: number} = {}
         local allyTarBoolList = {
             [MACROS.SINGLE_ALLY_ATTACK] = true,
@@ -199,6 +192,7 @@ function module.Init(plr)
                 end)
             end
             guiInstances.TargetFrame.Visible = true
+
         elseif skill.Target == MACROS.ALL_ENEMY_ATTACK or skill.Target == MACROS.ALL_ALLY_ATTACK then
             local targetIdList = {}
 
@@ -213,6 +207,7 @@ function module.Init(plr)
                 skillList = skill,
                 target = targetIdList, -- -1: All enemies
             })
+
         elseif skill.Target == MACROS.SUMMON_ATTACK then -- Spawn Ally Unit
             FH.ClientMessage({
                 action = MACROS.APPLY_DAMAGE,
@@ -225,7 +220,7 @@ function module.Init(plr)
         RemoveChildUI(guiInstances.AttackActionFrame)
     end
 
-    local function ChooseAttackTarget(data) -- client 4
+    local function ChooseAttack(data)
         if not (data.allyList and data.enemyList and data.skillList) then warn("Missing Data") return end
 
         local skillList = {}
@@ -236,11 +231,13 @@ function module.Init(plr)
         for _, skill in ipairs(skillList) do
             local button: TextButton = Instance.new("TextButton")
             button.Parent = guiInstances.AttackActionFrame
-            button.Text = skill.Name
+            button.Text = skill.Name .. ": " .. skill.Energy
             button.Size = UDim2.fromScale(0.1, 1)
 
             button.Activated:Connect(function()
-                AttackEnemy(skill, data.enemyList, data.allyList) -- skillList and skillNames must line up
+                if data.unitList.Energy < skill.Energy then return end
+
+                ChooseAttackTarget(skill, data.enemyList, data.allyList) -- skillList and skillNames must line up
                 guiInstances.AttackActionFrame.Visible = false
                 return
             end)
@@ -252,7 +249,7 @@ function module.Init(plr)
     -- Handler
     FH.RegisterClient(plr, MACROS.DISPLAY_NOTIFICATION, DisplayNotification)
     FH.RegisterClient(plr, MACROS.PLAYER_INPUT, PlayerInput)
-    FH.RegisterClient(plr, MACROS.CHOOSE_ATTACK_TARGET, ChooseAttackTarget)
+    FH.RegisterClient(plr, MACROS.CHOOSE_ATTACK_TARGET, ChooseAttack)
 end
 
 return module

@@ -59,6 +59,7 @@ export type AttackAction = {
         Damage: number,
         Nature: number,
         Target: number,
+        Energy: number,
         Effect: EffectVariable?
     }
 }
@@ -69,6 +70,7 @@ local attackActions: AttackAction = {
         Damage = 2,
         Nature = 1,
         Target = MACROS.ALL_ENEMY_ATTACK,
+        Energy = 0,
         Effect = nil
     },
     [2] = {
@@ -76,6 +78,7 @@ local attackActions: AttackAction = {
         Damage = 5,
         Nature = 1,
         Target = MACROS.SINGLE_ENEMY_ATTACK,
+        Energy = 1,
         Effect = nil
     },
     [3] = {
@@ -83,6 +86,7 @@ local attackActions: AttackAction = {
         Damage = 3,
         Nature = 1,
         Target = MACROS.SINGLE_ENEMY_ATTACK,
+        Energy = 0,
         Effect = nil
     },
     [4] = {
@@ -90,6 +94,7 @@ local attackActions: AttackAction = {
         Damage = -2,
         Nature = 2,
         Target = MACROS.SINGLE_ALLY_ATTACK,
+        Energy = 1,
         Effect = { Name = "Regeneration", Duration = 2, HealConst = 1 }
     },
     [5] = {
@@ -97,6 +102,7 @@ local attackActions: AttackAction = {
         Damage = 1,
         Nature = 2,
         Target = MACROS.SINGLE_ENEMY_ATTACK,
+        Energy = 0,
         Effect = { Name = "Poison", Duration = 3, Damage = 1 }
     },
     [6] = {
@@ -104,6 +110,7 @@ local attackActions: AttackAction = {
         Damage = 2,
         Nature = 2,
         Target = MACROS.SUMMON_ATTACK,
+        Energy = 3,
         Effect = nil
     },
 }
@@ -116,6 +123,8 @@ export type UnitType = {
         Speed: number,
         MaxHealth: number,
         Health: number,
+        MaxEnergy: number,
+        Energy: number,
         Effect: EffectVariable?,
         Skills: {number},
         Owner: string|Players?,
@@ -132,6 +141,8 @@ local unitTypes: UnitType = {
         Speed = 3,
         MaxHealth = 10,
         Health = 10,
+        MaxEnergy = 3,
+        Energy  = 0,
         Effect = {},
         Skills = {1, 2}
     },
@@ -142,6 +153,8 @@ local unitTypes: UnitType = {
         Speed = 1,
         MaxHealth = 20,
         Health = 20,
+        MaxEnergy = 5,
+        Energy  = 0,
         Effect = {},
         Skills = {3, 6}
     },
@@ -152,6 +165,8 @@ local unitTypes: UnitType = {
         Speed = 2,
         MaxHealth = 8,
         Health = 8,
+        MaxEnergy = 2,
+        Energy  = 1,
         Effect = {},
         Skills = {3, 5}
     },
@@ -162,6 +177,8 @@ local unitTypes: UnitType = {
         Speed = 5,
         MaxHealth = 8,
         Health = 8,
+        MaxEnergy = 1,
+        Energy  = 0,
         Effect = {
             [1] = { Name = "Spirit Mending", Duration = 99, HealConst = 0.5, HealMult = 1.5, },
         },

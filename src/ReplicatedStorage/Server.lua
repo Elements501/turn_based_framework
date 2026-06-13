@@ -7,12 +7,9 @@ local UNIT: ModuleScript = RS:WaitForChild("Unit")
 
 -- Data
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
-type AttackAction = GAME_DATA.AttackAction
-type UnitType = GAME_DATA.UnitType
-type Macros = GAME_DATA.Macros
-local attackActions: AttackAction = GAME_DATA.attackActions
-local unitTypes: UnitType = GAME_DATA.unitTypes
-local MACROS: Macros = GAME_DATA.MACROS
+local attackActions: GAME_DATA.AttackAction = GAME_DATA.attackActions
+local unitTypes: GAME_DATA.UnitType = GAME_DATA.unitTypes
+local MACROS: GAME_DATA.Macros = GAME_DATA.MACROS
 
 -- Shared
 local SHARED_LIST: {[string]: {}} = require(RS:WaitForChild("SharedList"))
@@ -36,9 +33,10 @@ function module.ServerScript()
             unitOwner = owner,
         })
         end
+
         task.wait(0.5) -- Wait for all the require
         SpawnUnit(1, "Enemy", "ai")
-        SpawnUnit(2, "Enemy", "ai")
+        SpawnUnit(2, "Ally", "FireAlexGame")
         SpawnUnit(3, "Ally", "FireAlexGame")
         SpawnUnit(4, "Ally", "FireAlexGame")
     end
