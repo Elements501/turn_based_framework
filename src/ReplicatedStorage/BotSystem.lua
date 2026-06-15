@@ -43,15 +43,15 @@ function BotSystem:ChooseAction(sharedList: {}): { skillList: {}, target: (numbe
     if not next(enemyIdList) then warn("All Enemies Died") return end
     if not next(allyIdList) then warn("All Allies Died") return end
 
-    if attackAction.Target == MACROS.SINGLE_ENEMY_ATTACK then
+    if attackAction.Target == "SingleEnemy" then
         return { skillList = attackAction, target = enemyIdList[math.random(1, #enemyIdList)] }
-    elseif attackAction.Target == MACROS.SINGLE_ALLY_ATTACK then
+    elseif attackAction.Target == "SingleAlly" then
         return { skillList = attackAction, target = allyIdList[math.random(1, #allyIdList)] }
-    elseif attackAction.Target == MACROS.ALL_ENEMY_ATTACK then
+    elseif attackAction.Target == "AllEnemy" then
         return { skillList = attackAction, target = enemyIdList }
-    elseif attackAction.Target == MACROS.ALL_ALLY_ATTACK then
+    elseif attackAction.Target == "AllAlly" then
         return { skillList = attackAction, target = allyIdList }
-    elseif attackAction.Target == MACROS.SUMMON_ATTACK then
+    elseif attackAction.Target == "Summon" then
         return { skillList = attackAction, target = nil }
     end
 

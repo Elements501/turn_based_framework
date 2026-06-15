@@ -91,7 +91,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
         end
 
         FH.ClientMessage({
-            action = MACROS.CHOOSE_ATTACK_TARGET,
+            action = MACROS.CHOOSE_ATTACK,
             send = id,
             receive = plrOwner,
             unitList = unit,
@@ -104,18 +104,32 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
     local function ApplyDamage(data)
         if unit.Energy < data.skillList.Energy then warn("Insufficient Energy") return end
 
-        print("Attack Used: ", data.skillList, "; On unit:", data.target)
+        for _, plr in ipairs(PS:GetPlayers()) do
+            FH.ClientMessage({
+                action = MACROS.DISPLAY_NOTIFICATION,
+                send = id,
+                receive = plr,
+                msg = {
+                    code = "Attack",
+                    attackerId = id,
+                    attackerName = unit.Name,
+                    skill = data.skillList,
+                }
+            })
+        end
+
+        -- Deduct energy
         unit.Energy -= data.skillList.Energy
         unitUI:UpdateEnergy()
 
-        if data.skillList.Target == MACROS.SINGLE_ENEMY_ATTACK or data.skillList.Target == MACROS.SINGLE_ALLY_ATTACK then
+        if data.skillList.Target == "SingleEnemy" or data.skillList.Target == "SingleAlly" then
             FH.ServerMessage({
                 action = MACROS.TAKE_DAMAGE,
                 send = id,
                 receive = data.target,
                 skillList = data.skillList,
             })
-        elseif data.skillList.Target == MACROS.ALL_ENEMY_ATTACK or data.skillList.Target == MACROS.ALL_ALLY_ATTACK then -- Area Attack
+        elseif data.skillList.Target == "AllEnemy" or data.skillList.Target == "AllAlly" then -- Area Attack
             if typeof(data.target) ~= "table" then warn("Unknown Target List") return end
             for _, targetId in ipairs(data.target) do
                 FH.ServerMessage({
@@ -126,7 +140,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
                     skillList = data.skillList
                 })
             end
-        elseif data.skillList.Target == MACROS.SUMMON_ATTACK then -- Summon Ally Unit
+        elseif data.skillList.Target == "Summon" then -- Summon Ally Unit
             FH.ServerMessage({
                 action = MACROS.SUMMON_UNIT,
                 send = id,
@@ -148,7 +162,7 @@ function module.UnitScript(part: Instance, metadata: {} | nil, id: number)
                 send = id,
                 receive = plr,
                 msg = {
-                    code = 1,
+                    code = "Damage",
                     attackerId = data.send,
                     attackerName = sharedList.unitList[data.send].Name,
                     targetId = id,

@@ -1,31 +1,22 @@
 --!strict
 export type Macros = {[number]: any}
 
-local MACROS = {
+local MACROS = { -- MACROS are used to save data
     -- Server <-> Server Actions
     ROUND_COUNTER = 1,
-    ORDER_UNITS = 3,
-    TAKE_DAMAGE = 4,
-    SUMMON_UNIT = 5,
-    REMOVE_UNIT = 6,
-    UNIT_ACTION = 7,
+    ORDER_UNITS = 2,
+    TAKE_DAMAGE = 3,
+    SUMMON_UNIT = 4,
+    REMOVE_UNIT = 5,
+    UNIT_ACTION = 6,
     -- Server -> Client Actions
-    DISPLAY_NOTIFICATION = -2,
-    PLAYER_INPUT = 1,
-    CHOOSE_ATTACK_TARGET = 4,
+    DISPLAY_NOTIFICATION = 21,
+    PLAYER_INPUT = 22,
+    CHOOSE_ATTACK = 23,
     -- Client -> Server Actions
-    FINISH_ACTION = 2,
-    ATTACK_ACTION = 3,
-    APPLY_DAMAGE = 4,
-    -- Target
-    SELF_ATTACK = -1,
-    SUMMON_ATTACK = 0,
-    SINGLE_ENEMY_ATTACK = 1,
-    MULTIPLE_ENEMY_ATTACK = 2,
-    ALL_ENEMY_ATTACK = 3,
-    SINGLE_ALLY_ATTACK = 4,
-    MULTIPLE_ALLY_ATTACK = 5,
-    ALL_ALLY_ATTACK = 6,
+    FINISH_ACTION = 41,
+    ATTACK_ACTION = 42,
+    APPLY_DAMAGE = 43,
 }
 
 export type EffectVariable = {
@@ -69,7 +60,7 @@ local attackActions: AttackAction = {
         Name = "Scream",
         Damage = 2,
         Nature = 1,
-        Target = MACROS.ALL_ENEMY_ATTACK,
+        Target = "AllEnemy",
         Energy = 0,
         Effect = nil
     },
@@ -77,7 +68,7 @@ local attackActions: AttackAction = {
         Name = "Stab",
         Damage = 5,
         Nature = 1,
-        Target = MACROS.SINGLE_ENEMY_ATTACK,
+        Target = "SingleEnemy",
         Energy = 1,
         Effect = nil
     },
@@ -85,7 +76,7 @@ local attackActions: AttackAction = {
         Name = "Bump",
         Damage = 3,
         Nature = 1,
-        Target = MACROS.SINGLE_ENEMY_ATTACK,
+        Target = "SingleEnemy",
         Energy = 0,
         Effect = nil
     },
@@ -93,7 +84,7 @@ local attackActions: AttackAction = {
         Name = "Heal",
         Damage = -2,
         Nature = 2,
-        Target = MACROS.SINGLE_ALLY_ATTACK,
+        Target = "SingleAlly",
         Energy = 1,
         Effect = { Name = "Regeneration", Duration = 2, HealConst = 1 }
     },
@@ -101,7 +92,7 @@ local attackActions: AttackAction = {
         Name = "Poison",
         Damage = 1,
         Nature = 2,
-        Target = MACROS.SINGLE_ENEMY_ATTACK,
+        Target = "SingleEnemy",
         Energy = 0,
         Effect = { Name = "Poison", Duration = 3, Damage = 1 }
     },
@@ -109,7 +100,7 @@ local attackActions: AttackAction = {
         Name = "Mitosis",
         Damage = 2,
         Nature = 2,
-        Target = MACROS.SUMMON_ATTACK,
+        Target = "Summon",
         Energy = 3,
         Effect = nil
     },

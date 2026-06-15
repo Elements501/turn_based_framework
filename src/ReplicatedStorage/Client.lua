@@ -17,40 +17,111 @@ function module.Init(plr)
     local function CreateGui(): {Instance}
         local screenGui: ScreenGui = Instance.new("ScreenGui")
         screenGui.Parent = plr.PlayerGui
+
+        -- Action
         local actionFrame: Frame = Instance.new("Frame")
         actionFrame.Parent = screenGui
-        actionFrame.Size = UDim2.fromScale(1, 0.2)
+        actionFrame.Name = "Action"
+        actionFrame.Size = UDim2.fromScale(0.7, 0.1)
         actionFrame.Position = UDim2.fromScale(0, 0.8)
         actionFrame.BackgroundTransparency = 1
         actionFrame.Visible = false
-        local actionUIGrid: UIGridLayout = Instance.new("UIGridLayout")
-        actionUIGrid.Parent = actionFrame
+        local actionUIList: UIListLayout = Instance.new("UIListLayout")
+        actionUIList.Parent = actionFrame
+        actionUIList.FillDirection = Enum.FillDirection.Horizontal
+        actionUIList.Padding = UDim.new(0.01, 0)
+        local actionMargin: UIPadding = Instance.new("UIPadding")
+        actionMargin.Parent = actionFrame
+        actionMargin.PaddingBottom = UDim.new(0.05, 0)
         local passButton: TextButton = Instance.new("TextButton")
         passButton.Parent = actionFrame
         passButton.Text = "Pass"
-        passButton.Size = UDim2.fromScale(0.1, 1)
+        passButton.Size = UDim2.fromScale(1, 1)
+        local passButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+        passButtonRatio.Parent = passButton
+        passButtonRatio.AspectRatio = 2
         local attackButton: TextButton = Instance.new("TextButton")
         attackButton.Parent = actionFrame
         attackButton.Text = "Attack"
-        attackButton.Size = UDim2.fromScale(0.1, 1)
+        attackButton.Size = UDim2.fromScale(1, 1)
+        local attackButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+        attackButtonRatio.Parent = attackButton
+        attackButtonRatio.AspectRatio = 2
 
+        -- Bottom Info Bar
+        local infoFrame: Frame = Instance.new("Frame")
+        infoFrame.Parent = screenGui
+        infoFrame.Name = "Information"
+        infoFrame.Size = UDim2.fromScale(0.7, 0.1)
+        infoFrame.Position = UDim2.fromScale(0, 0.9)
+        infoFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+        infoFrame.BackgroundTransparency = 0.5
+
+        -- Attack Action
         local attackActionFrame: Frame = Instance.new("Frame")
         attackActionFrame.Parent = screenGui
-        attackActionFrame.Size = UDim2.fromScale(1, 0.2)
+        attackActionFrame.Name = "Attack Action"
+        attackActionFrame.Size = UDim2.fromScale(0.7, 0.1)
         attackActionFrame.Position = UDim2.fromScale(0, 0.8)
         attackActionFrame.BackgroundTransparency = 1
         attackActionFrame.Visible = false
-        local attackActionUIGrid: UIGridLayout = Instance.new("UIGridLayout")
-        attackActionUIGrid.Parent = attackActionFrame
+        local attackActionUIList: UIListLayout = Instance.new("UIListLayout")
+        attackActionUIList.Parent = attackActionFrame
+        attackActionUIList.FillDirection = Enum.FillDirection.Horizontal
+        attackActionUIList.Padding = UDim.new(0.01, 0)
+        local attackActionMargin: UIPadding = Instance.new("UIPadding")
+        attackActionMargin.Parent = attackActionFrame
+        attackActionMargin.PaddingBottom = UDim.new(0.05, 0)
+
+        local attackActionCancel: TextButton = Instance.new("TextButton")
+        attackActionCancel.Parent = attackActionFrame
+        attackActionCancel.Name = "CancelAttack"
+        attackActionCancel.Text = "CANCEL"
+        attackActionCancel.Size = UDim2.fromScale(1, 1)
+        local attackCancelRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+        attackCancelRatio.Parent = attackActionCancel
+        attackCancelRatio.AspectRatio = 1
+
+        local attackActionButton: TextButton = Instance.new("TextButton")
+        attackActionButton.Name = "Template"
+        attackActionButton.Size = UDim2.fromScale(1, 1)
+        local attackActionButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+        attackActionButtonRatio.Parent = attackActionButton
+        attackActionButtonRatio.AspectRatio = 2
+
+        -- Choose Target
         local targetFrame: Frame = Instance.new("Frame")
         targetFrame.Parent = screenGui
-        targetFrame.Size = UDim2.fromScale(1, 0.2)
+        targetFrame.Name = "AttackAction"
+        targetFrame.Size = UDim2.fromScale(0.7, 0.1)
         targetFrame.Position = UDim2.fromScale(0, 0.8)
         targetFrame.BackgroundTransparency = 1
         targetFrame.Visible = false
-        local targetUIGrid: UIGridLayout = Instance.new("UIGridLayout")
-        targetUIGrid.Parent = targetFrame
+        local targetFrameUIList: UIListLayout = Instance.new("UIListLayout")
+        targetFrameUIList.Parent = targetFrame
+        targetFrameUIList.FillDirection = Enum.FillDirection.Horizontal
+        targetFrameUIList.Padding = UDim.new(0.01, 0)
+        local targetFrameMargin: UIPadding = Instance.new("UIPadding")
+        targetFrameMargin.Parent = targetFrame
+        targetFrameMargin.PaddingBottom = UDim.new(0.05, 0)
 
+        local targetCancel: TextButton = Instance.new("TextButton")
+        targetCancel.Parent = targetFrame
+        targetCancel.Name = "CancelAttack"
+        targetCancel.Text = "CANCEL"
+        targetCancel.Size = UDim2.fromScale(1, 1)
+        local targetCancelRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+        targetCancelRatio.Parent = targetCancel
+        targetCancelRatio.AspectRatio = 1
+
+        local targetButton: TextButton = Instance.new("TextButton")
+        targetButton.Name = "Template"
+        targetButton.Size = UDim2.fromScale(1, 1)
+        local targetButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+        targetButtonRatio.Parent = targetButton
+        targetButtonRatio.AspectRatio = 2
+
+        -- Side Notification
         local notificationFrame: Frame = Instance.new("Frame")
         notificationFrame.Parent = screenGui
         notificationFrame.Name = "Notification"
@@ -70,58 +141,88 @@ function module.Init(plr)
             ["ScreenGui"] = screenGui,
             ["PassButton"] = passButton,
             ["AttackButton"] = attackButton,
+            ["InformationFrame"] = infoFrame,
             ["ActionFrame"] = actionFrame,
             ["AttackActionFrame"] = attackActionFrame,
+            ["AttackActionCancel"] = attackActionCancel,
+            ["AttackActionButton"] = attackActionButton,
             ["TargetFrame"] = targetFrame,
+            ["TargetCancel"] = targetCancel,
+            ["TargetButton"] = targetButton,
             ["NotificationFrame"] = notificationFrame,
             ["NotificationLabel"] = notificationLabel,
         }
     end
-    local guiInstances: {Instance} = CreateGui()
+    local playerUI: {Instance} = CreateGui()
 
-    -- GUI Functions
-    local unitId: number = 0
-    guiInstances.PassButton.Activated:Connect(function()
-        guiInstances.ActionFrame.Visible = false
-        FH.ClientMessage({
-            action = MACROS.FINISH_ACTION,
-            send = plr,
-            receive = unitId
-        })
-    end)
-    guiInstances.AttackButton.Activated:Connect(function()
-        guiInstances.ActionFrame.Visible = false
-        FH.ClientMessage({
-            action = MACROS.ATTACK_ACTION,
-            send = plr,
-            receive = unitId,
-        })
-    end)
+    local unitId: number = 0 -- Mutable: which id player is controlling
 
+    -- Local Functions
     local function PlayerInput(data)
         local unitData = data.unitData
         unitId = data.send -- Update Id of the unit controlling
-        guiInstances.ActionFrame.Visible = true
+        playerUI.ActionFrame.Visible = true
 
         print("Player Received", unitId, unitData)
         -- TODO: UI Management with unitData
     end
 
     local function RemoveChildUI(parentUI)
+        local exlcudedUIType: {string} = {"UIGridLayout", "UIListLayout", "UIPadding", "UIAspectRatioConstraint"}
+        local exlcudedUIInstance: {Instance} = {playerUI.AttackActionCancel, playerUI.TargetCancel}
+        local function CheckRemoval(ui)
+            for _, excluded in ipairs(exlcudedUIType) do
+                if ui:IsA(excluded) then return true end
+            end
+            for _, excluded in ipairs(exlcudedUIInstance) do
+                if ui == excluded then return true end
+            end
+            return false
+        end
+
         for _, child in ipairs(parentUI:GetChildren()) do
-            if child:IsA("UIGridLayout") then continue end
+            if CheckRemoval(child) then continue end
             child:Destroy()
         end
     end
 
+    -- GUI Functions
+    playerUI.PassButton.Activated:Connect(function()
+        playerUI.ActionFrame.Visible = false
+        FH.ClientMessage({
+            action = MACROS.FINISH_ACTION,
+            send = plr,
+            receive = unitId
+        })
+    end)
+    playerUI.AttackButton.Activated:Connect(function()
+        playerUI.ActionFrame.Visible = false
+        FH.ClientMessage({
+            action = MACROS.ATTACK_ACTION,
+            send = plr,
+            receive = unitId,
+        })
+    end)
+    playerUI.AttackActionCancel.Activated:Connect(function()
+        playerUI.ActionFrame.Visible = true
+        playerUI.AttackActionFrame.Visible = false
+        RemoveChildUI(playerUI.AttackActionFrame)
+    end)
+    playerUI.TargetCancel.Activated:Connect(function()
+        playerUI.AttackActionFrame.Visible = true
+        playerUI.TargetFrame.Visible = false
+        RemoveChildUI(playerUI.TargetFrame)
+    end)
+
+    -- Module Functions
     local function DisplayNotification(data)
         local msg = data.msg
         if msg == nil then warn("Unknown Notification") return end
         if msg.skill.Nature == 3 then return end -- No notification for 3: effect
 
         -- Create new notification
-        local notif: TextLabel = guiInstances.NotificationLabel:Clone()
-        notif.Parent = guiInstances.NotificationFrame
+        local notif: TextLabel = playerUI.NotificationLabel:Clone()
+        notif.Parent = playerUI.NotificationFrame
 
         local function FadeOut()
             local FADE_TIME: number = 1
@@ -148,39 +249,48 @@ function module.Init(plr)
         task.spawn(Decay)
 
         -- Set text
-        local function StylisedAttack()
+        local function DamageNotification()
             notif.BorderSizePixel = 0
             notif.BackgroundTransparency = 0.5
             notif.BackgroundColor3 = Color3.new(1, 1, 1)
             notif.TextColor3 = Color3.new(0, 0, 0)
 
-            notif.Text = msg.attackerName.." ("..msg.attackerId..") <font color=\"#333333\">attacked</font> "..msg.targetName.." ("..msg.targetId..") <font color=\"#333333\">with</font> "..msg.skill.Name
+            notif.Text = msg.targetName.." ("..msg.targetId..") <font color=\"#333333\">Damaged by</font> "..msg.skill.Name.." <font color=\"#333333\">for</font> "..msg.skill.Damage
         end
 
-        if msg.code == 1 then StylisedAttack()
+        local function AttackNotification()
+            notif.BorderSizePixel = 0
+            notif.BackgroundTransparency = 0.5
+            notif.BackgroundColor3 = Color3.new(1, 1, 1)
+            notif.TextColor3 = Color3.new(0, 0, 0)
+
+            notif.Text = msg.attackerName.." ("..msg.attackerId..") <font color=\"#333333\">Attacked with</font> "..msg.skill.Name
+        end
+
+        if msg.code == "Damage" then DamageNotification()
+        elseif msg.code == "Attack" then AttackNotification()
         else warn("Unknown Notification") return end
     end
 
     local function ChooseAttackTarget(skill, enemyList, allyList) -- enemyList is numbered, skill is string-indexed with Name
         local targetList: {[number]: number} = {}
         local allyTarBoolList = {
-            [MACROS.SINGLE_ALLY_ATTACK] = true,
-            [MACROS.MULTIPLE_ALLY_ATTACK] = true,
-            [MACROS.ALL_ALLY_ATTACK] = true,
+            ["SingleAlly"] = true,
+            ["MultiAlly"] = true,
+            ["AllAlly"] = true,
         }
         if allyTarBoolList[skill.Target] then targetList = allyList
         else targetList = enemyList end
 
-        if skill.Target == MACROS.SINGLE_ENEMY_ATTACK or skill.Target == MACROS.SINGLE_ALLY_ATTACK then
+        if skill.Target == "SingleEnemy" or skill.Target == "SingleAlly" then
 
-            for _, target in ipairs(targetList) do
-                local button: TextButton = Instance.new("TextButton")
-                button.Parent = guiInstances.TargetFrame
+            for _, target in ipairs(targetList) do -- Create target buttons
+                local button: TextButton = playerUI.TargetButton:Clone()
+                button.Parent = playerUI.TargetFrame
                 button.Text = target.Name
-                button.Size = UDim2.fromScale(0.1, 1)
 
                 button.Activated:Connect(function()
-                    guiInstances.TargetFrame.Visible = false
+                    playerUI.TargetFrame.Visible = false
                     FH.ClientMessage({
                         action = MACROS.APPLY_DAMAGE,
                         send = plr,
@@ -188,12 +298,13 @@ function module.Init(plr)
                         skillList = skill,
                         target = target.Id,
                     })
-                    RemoveChildUI(guiInstances.TargetFrame)
+                    RemoveChildUI(playerUI.AttackActionFrame) -- Remove all the Attack action buttons
+                    RemoveChildUI(playerUI.TargetFrame)
                 end)
             end
-            guiInstances.TargetFrame.Visible = true
+            playerUI.TargetFrame.Visible = true
 
-        elseif skill.Target == MACROS.ALL_ENEMY_ATTACK or skill.Target == MACROS.ALL_ALLY_ATTACK then
+        elseif skill.Target == "AllEnemy" or skill.Target == "AllAlly" then
             local targetIdList = {}
 
             for _, target in ipairs(targetList) do
@@ -208,7 +319,7 @@ function module.Init(plr)
                 target = targetIdList, -- -1: All enemies
             })
 
-        elseif skill.Target == MACROS.SUMMON_ATTACK then -- Spawn Ally Unit
+        elseif skill.Target == "Summon" then -- Spawn Ally Unit
             FH.ClientMessage({
                 action = MACROS.APPLY_DAMAGE,
                 send = plr,
@@ -217,7 +328,6 @@ function module.Init(plr)
                 -- TODO: Add target = "Team Name" which spawns the unit into a team -> .Target = 0: Summon General Unit
             })
         else warn("Unknown Target Range") return end
-        RemoveChildUI(guiInstances.AttackActionFrame)
     end
 
     local function ChooseAttack(data)
@@ -228,28 +338,28 @@ function module.Init(plr)
             table.insert(skillList, attackActions[skillNum])
         end
 
-        for _, skill in ipairs(skillList) do
-            local button: TextButton = Instance.new("TextButton")
-            button.Parent = guiInstances.AttackActionFrame
+        for _, skill in ipairs(skillList) do -- Create buttons to choose Attack action
+            local button: TextButton = playerUI.AttackActionButton:Clone()
+            button.Parent = playerUI.AttackActionFrame
             button.Text = skill.Name .. ": " .. skill.Energy
-            button.Size = UDim2.fromScale(0.1, 1)
 
             button.Activated:Connect(function()
                 if data.unitList.Energy < skill.Energy then return end
 
                 ChooseAttackTarget(skill, data.enemyList, data.allyList) -- skillList and skillNames must line up
-                guiInstances.AttackActionFrame.Visible = false
-                return
+
+                -- Buttons not removed as Choosing Target can be canceled
+                playerUI.AttackActionFrame.Visible = false
             end)
         end
 
-        guiInstances.AttackActionFrame.Visible = true
+        playerUI.AttackActionFrame.Visible = true
     end
 
     -- Handler
     FH.RegisterClient(plr, MACROS.DISPLAY_NOTIFICATION, DisplayNotification)
     FH.RegisterClient(plr, MACROS.PLAYER_INPUT, PlayerInput)
-    FH.RegisterClient(plr, MACROS.CHOOSE_ATTACK_TARGET, ChooseAttack)
+    FH.RegisterClient(plr, MACROS.CHOOSE_ATTACK, ChooseAttack)
 end
 
 return module
