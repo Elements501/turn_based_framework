@@ -32,7 +32,7 @@ function BotSystem:ChooseAction(sharedList: {}): { skillList: {}, target: (numbe
         end
     end
 
-    local attackList: {number} = self.unit.Skills
+    local attackList: {number} = table.clone(self.unit.Skills) -- Prevent actual .Skills being changed
 
     -- Remove attacks with insufficient energy
     for key, attackNum in pairs(attackList) do

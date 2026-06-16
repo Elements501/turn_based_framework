@@ -35,10 +35,10 @@ function module.ServerScript()
         end
 
         task.wait(0.5) -- Wait for all the require
-        SpawnUnit(1, "Enemy", "ai")
+        -- SpawnUnit(1, "Enemy", "ai")
+        SpawnUnit(2, "Enemy", "ai")
         SpawnUnit(2, "Ally", "FireAlexGame")
-        SpawnUnit(3, "Ally", "FireAlexGame")
-        SpawnUnit(4, "Ally", "FireAlexGame")
+        SpawnUnit(2, "Ally", "FireAlexGame")
     end
     task.spawn(InitialiseEnemy)
 
@@ -64,35 +64,51 @@ function module.ServerScript()
             local unitId: number = data.unit
             if unitId == nil then warn("Unknown Unit Deleted") return end
 
-            if table.find(sharedList.actionOrder, unitId) < sharedList.actionNumber then -- Unit act before now
+            local unitOrder: number = table.find(sharedList.actionOrder, unitId)
+            if unitOrder == nil then warn("unknown Unit Order") return end
+
+            if unitOrder < sharedList.actionNumber then -- Unit act before now
                 sharedList.actionNumber += mode -- Consider summoned acted
             end
         end
+
         if data.mode == -1 then ChangeOrder(-1) end -- Unit Removed
 
         local dexList = {}
         for unitId, unitList in pairs(sharedList.unitList) do
             table.insert(dexList, {
-                Unit = unitId,
-                Spd = unitList.Speed
+                Id = unitId,
+                Speed = unitList.Speed
             })
         end
         if #dexList == 0 then warn("No Units Found") return {Error = "Order"} end
 
         table.sort(dexList, function(a, b)
-            return a.Spd > b.Spd
+            if a.Speed == b.Speed then return a.Id < b.Id else return a.Speed > b.Speed end
         end)
 
         local orderedList = {}
         for _, unitData in ipairs(dexList) do
-            table.insert(orderedList, unitData.Unit)
+            table.insert(orderedList, unitData.Id)
         end
         sharedList.actionOrder = orderedList
 
         if data.mode == 1 then ChangeOrder(1) end -- Unit Added
+
     end
 
     local function RoundCounter()
+        for _, plr in ipairs(PS:GetPlayers()) do -- Update new order
+            FH.ClientMessage({
+                action = MACROS.DISPLAY_ORDER,
+                send = 0,
+                receive = plr,
+                unitList = sharedList.unitList,
+                actionOrder = sharedList.actionOrder,
+                actionNumber = sharedList.actionNumber,
+            })
+        end
+
         if sharedList.actionNumber > sharedList.totalUnits then -- Next round
             sharedList.roundNumber += 1
             sharedList.actionNumber = 1

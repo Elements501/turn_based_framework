@@ -22,7 +22,7 @@ function module.Init(plr)
         local actionFrame: Frame = Instance.new("Frame")
         actionFrame.Parent = screenGui
         actionFrame.Name = "Action"
-        actionFrame.Size = UDim2.fromScale(0.7, 0.1)
+        actionFrame.Size = UDim2.fromScale(0.8, 0.1)
         actionFrame.Position = UDim2.fromScale(0, 0.8)
         actionFrame.BackgroundTransparency = 1
         actionFrame.Visible = false
@@ -37,6 +37,7 @@ function module.Init(plr)
         passButton.Parent = actionFrame
         passButton.Text = "Pass"
         passButton.Size = UDim2.fromScale(1, 1)
+        passButton.BackgroundColor3 = Color3.new(1, 1, 1)
         local passButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         passButtonRatio.Parent = passButton
         passButtonRatio.AspectRatio = 2
@@ -44,6 +45,7 @@ function module.Init(plr)
         attackButton.Parent = actionFrame
         attackButton.Text = "Attack"
         attackButton.Size = UDim2.fromScale(1, 1)
+        attackButton.BackgroundColor3 = Color3.new(1, 1 ,1)
         local attackButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         attackButtonRatio.Parent = attackButton
         attackButtonRatio.AspectRatio = 2
@@ -52,7 +54,7 @@ function module.Init(plr)
         local infoFrame: Frame = Instance.new("Frame")
         infoFrame.Parent = screenGui
         infoFrame.Name = "Information"
-        infoFrame.Size = UDim2.fromScale(0.7, 0.1)
+        infoFrame.Size = UDim2.fromScale(0.8, 0.1)
         infoFrame.Position = UDim2.fromScale(0, 0.9)
         infoFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         infoFrame.BackgroundTransparency = 0.5
@@ -61,8 +63,9 @@ function module.Init(plr)
         local attackActionFrame: Frame = Instance.new("Frame")
         attackActionFrame.Parent = screenGui
         attackActionFrame.Name = "Attack Action"
-        attackActionFrame.Size = UDim2.fromScale(0.7, 0.1)
+        attackActionFrame.Size = UDim2.fromScale(0.8, 0.1)
         attackActionFrame.Position = UDim2.fromScale(0, 0.8)
+        attackActionFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         attackActionFrame.BackgroundTransparency = 1
         attackActionFrame.Visible = false
         local attackActionUIList: UIListLayout = Instance.new("UIListLayout")
@@ -78,6 +81,7 @@ function module.Init(plr)
         attackActionCancel.Name = "CancelAttack"
         attackActionCancel.Text = "CANCEL"
         attackActionCancel.Size = UDim2.fromScale(1, 1)
+        attackActionCancel.BackgroundColor3 = Color3.new(1, 1, 1)
         local attackCancelRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         attackCancelRatio.Parent = attackActionCancel
         attackCancelRatio.AspectRatio = 1
@@ -85,6 +89,7 @@ function module.Init(plr)
         local attackActionButton: TextButton = Instance.new("TextButton")
         attackActionButton.Name = "Template"
         attackActionButton.Size = UDim2.fromScale(1, 1)
+        attackActionButton.BackgroundColor3 = Color3.new(1, 1, 1)
         local attackActionButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         attackActionButtonRatio.Parent = attackActionButton
         attackActionButtonRatio.AspectRatio = 2
@@ -93,7 +98,7 @@ function module.Init(plr)
         local targetFrame: Frame = Instance.new("Frame")
         targetFrame.Parent = screenGui
         targetFrame.Name = "AttackAction"
-        targetFrame.Size = UDim2.fromScale(0.7, 0.1)
+        targetFrame.Size = UDim2.fromScale(0.8, 0.1)
         targetFrame.Position = UDim2.fromScale(0, 0.8)
         targetFrame.BackgroundTransparency = 1
         targetFrame.Visible = false
@@ -110,6 +115,7 @@ function module.Init(plr)
         targetCancel.Name = "CancelAttack"
         targetCancel.Text = "CANCEL"
         targetCancel.Size = UDim2.fromScale(1, 1)
+        targetCancel.BackgroundColor3 = Color3.new(1, 1, 1)
         local targetCancelRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         targetCancelRatio.Parent = targetCancel
         targetCancelRatio.AspectRatio = 1
@@ -117,6 +123,7 @@ function module.Init(plr)
         local targetButton: TextButton = Instance.new("TextButton")
         targetButton.Name = "Template"
         targetButton.Size = UDim2.fromScale(1, 1)
+        targetButton.BackgroundColor3 = Color3.new(1, 1, 1)
         local targetButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         targetButtonRatio.Parent = targetButton
         targetButtonRatio.AspectRatio = 2
@@ -125,8 +132,8 @@ function module.Init(plr)
         local notificationFrame: Frame = Instance.new("Frame")
         notificationFrame.Parent = screenGui
         notificationFrame.Name = "Notification"
-        notificationFrame.Size = UDim2.fromScale(0.3, 0.5)
-        notificationFrame.Position = UDim2.fromScale(0.7, 0.5)
+        notificationFrame.Size = UDim2.fromScale(0.2, 0.3)
+        notificationFrame.Position = UDim2.fromScale(0.8, 0.5)
         notificationFrame.BackgroundTransparency = 1
         local UiListLayout: UIListLayout = Instance.new("UIListLayout")
         UiListLayout.Parent = notificationFrame
@@ -136,6 +143,23 @@ function module.Init(plr)
         notificationLabel.TextSize = 8
         notificationLabel.TextScaled = false
         notificationLabel.RichText = true
+
+        -- Order Panel
+        local orderFrame: Frame = Instance.new("Frame")
+        orderFrame.Parent = screenGui
+        orderFrame.Name = "Order"
+        orderFrame.Size = UDim2.fromScale(0.2, 0.2)
+        orderFrame.Position = UDim2.fromScale(0.8, 0.8)
+        orderFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+        orderFrame.BackgroundTransparency = 0.5
+        local orderFrameList: UIListLayout = Instance.new("UIListLayout")
+        orderFrameList.Parent = orderFrame
+
+        local orderText: TextLabel = Instance.new("TextLabel")
+        orderText.Name = "OrderText"
+        orderText.Size = UDim2.fromScale(1, 0.15)
+        orderText.BackgroundTransparency = 0.5
+        -- Other attributes are set below
 
         return {
             ["ScreenGui"] = screenGui,
@@ -151,6 +175,8 @@ function module.Init(plr)
             ["TargetButton"] = targetButton,
             ["NotificationFrame"] = notificationFrame,
             ["NotificationLabel"] = notificationLabel,
+            ["OrderFrame"] = orderFrame,
+            ["OrderText"] = orderText,
         }
     end
     local playerUI: {Instance} = CreateGui()
@@ -272,6 +298,27 @@ function module.Init(plr)
         else warn("Unknown Notification") return end
     end
 
+    local function DisplayOrder(data: FH.Package): ()
+        if not (data.unitList or data.actionOrder) then warn("Missing Order Data to Client") return end
+        RemoveChildUI(playerUI.OrderFrame) -- Remove old order
+
+        for idx, id in ipairs(data.actionOrder) do
+            -- Order Label
+            local label: TextLabel = playerUI.OrderText:Clone()
+            label.Parent = playerUI.OrderFrame
+            label.Text = data.unitList[id].Name .. " (" .. id .. ") "
+
+            -- Highlight action unit
+            if data.actionNumber == idx then
+                label.BackgroundColor3 = Color3.new(0, 0, 0)
+                label.TextColor3 = Color3.new(1, 1, 1)
+            else
+                label.BackgroundColor3 = Color3.new(1, 1, 1)
+                label.TextColor3 = Color3.new(0, 0, 0)
+            end
+        end
+    end
+
     local function ChooseAttackTarget(skill, enemyList, allyList) -- enemyList is numbered, skill is string-indexed with Name
         local targetList: {[number]: number} = {}
         local allyTarBoolList = {
@@ -318,6 +365,7 @@ function module.Init(plr)
                 skillList = skill,
                 target = targetIdList, -- -1: All enemies
             })
+            RemoveChildUI(playerUI.AttackActionFrame)
 
         elseif skill.Target == "Summon" then -- Spawn Ally Unit
             FH.ClientMessage({
@@ -327,6 +375,8 @@ function module.Init(plr)
                 skillList = skill,
                 -- TODO: Add target = "Team Name" which spawns the unit into a team -> .Target = 0: Summon General Unit
             })
+            RemoveChildUI(playerUI.AttackActionFrame)
+
         else warn("Unknown Target Range") return end
     end
 
@@ -358,6 +408,7 @@ function module.Init(plr)
 
     -- Handler
     FH.RegisterClient(plr, MACROS.DISPLAY_NOTIFICATION, DisplayNotification)
+    FH.RegisterClient(plr, MACROS.DISPLAY_ORDER, DisplayOrder)
     FH.RegisterClient(plr, MACROS.PLAYER_INPUT, PlayerInput)
     FH.RegisterClient(plr, MACROS.CHOOSE_ATTACK, ChooseAttack)
 end

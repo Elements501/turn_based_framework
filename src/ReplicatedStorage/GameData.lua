@@ -13,6 +13,7 @@ local MACROS = { -- MACROS are used to save data
     DISPLAY_NOTIFICATION = 21,
     PLAYER_INPUT = 22,
     CHOOSE_ATTACK = 23,
+    DISPLAY_ORDER = 24,
     -- Client -> Server Actions
     FINISH_ACTION = 41,
     ATTACK_ACTION = 42,
