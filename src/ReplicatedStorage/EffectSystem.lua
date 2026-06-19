@@ -1,12 +1,5 @@
-local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
-local FH = require(RS:WaitForChild("FunctionHandler"))
-
 local EffectSystem = {}
 EffectSystem.__index = EffectSystem
-
-local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
-type Macros = GAME_DATA.Macros
-local MACROS: Macros = GAME_DATA.MACROS
 
 export type EffectSystemType = {
     unit: {},
@@ -34,14 +27,11 @@ function EffectSystem:GetEffect(key: string): number? -- Get sum of the value of
     return num
 end
 
-function EffectSystem:ApplyEffect(data)
-    local effect = data.skillList.Effect
-    if effect == nil then return end
-
+function EffectSystem:ApplyEffect(existingEffect, effect) -- effect is always single
     if next(self.unit.Effect) == nil then self.unit.Effect = {} end
-    effect.EffectId = self.unitUI:AddEffect(effect)
+    effect.EffectId = self.unitUI:AddEffect(effect) -- effect passed by reference, changes is made to Unit
 
-    if not data.selfApply then table.insert(self.unit.Effect, effect) end
+    if not existingEffect then table.insert(self.unit.Effect, effect) end
 end
 
 function EffectSystem:DecreaseEffectDuration()
@@ -52,7 +42,7 @@ function EffectSystem:DecreaseEffectDuration()
         if not effect then continue end
 
         if effect.EffectId == nil then -- Pre-existing effect from unit spawn
-            self:ApplyEffect({ selfApply = true, skillList = { Effect = effect } })
+            self:ApplyEffect(true, effect)
         end
 
         effect.Duration -= 1 -- TODO: Duration == -1 for infinite
@@ -76,23 +66,13 @@ function EffectSystem:ExecuteEffect()
         task.spawn(function() -- Damage
             local dmg: number? = effect.Damage
             if dmg == nil then return end
-            FH.ServerMessage({
-                action = MACROS.TAKE_DAMAGE,
-                send = self.id,
-                receive = self.id,
-                skillList = { Nature = 3, Damage = dmg },
-            })
+            self.unit:TakeDamage(self.id, { Nature = 3, Damage = dmg })
         end)
 
         task.spawn(function() -- Heal
             local heal: number? = effect.HealConst
             if heal == nil and effect.HealPerc == nil then return end -- TODO: HealPercent-only heal
-            FH.ServerMessage({
-                action = MACROS.TAKE_DAMAGE,
-                send = self.id,
-                receive = self.id,
-                skillList = { Nature = 3, Damage = -heal },
-            })
+            self.unit:TakeDamage(self.id, { Nature = 3, Damage = -heal })
         end)
     end
 end
