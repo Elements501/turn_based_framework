@@ -42,6 +42,7 @@ end
 
 -- Send Package
 function module.ClientMessage(data: Package)
+    if not data then warn("Missing Data") return end
     if type(data.receive) == "number" then
         clientAction:InvokeServer(data)
     elseif data.receive:IsA("Player") then

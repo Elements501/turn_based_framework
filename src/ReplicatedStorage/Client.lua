@@ -58,6 +58,71 @@ function module.Init(plr)
         infoFrame.Position = UDim2.fromScale(0, 0.9)
         infoFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         infoFrame.BackgroundTransparency = 0.5
+        local infoFrameList: UIListLayout = Instance.new("UIListLayout")
+        infoFrameList.Parent = infoFrame
+        infoFrameList.FillDirection = Enum.FillDirection.Horizontal
+        infoFrameList.SortOrder = Enum.SortOrder.LayoutOrder
+
+        local infoImage: ImageLabel = Instance.new("ImageLabel")
+        infoImage.Parent = infoFrame
+        infoImage.Name = "Info"
+        infoImage.Size = UDim2.fromScale(1, 1)
+        infoImage.Position = UDim2.fromScale(0, 0)
+        infoImage.LayoutOrder = 1
+        local infoImageSquare: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+        infoImageSquare.Parent= infoImage
+        infoImageSquare.AspectRatio = 1
+
+        local infoRightFrame: Frame = Instance.new("Frame")
+        infoRightFrame.Parent = infoFrame
+        infoRightFrame.Position = UDim2.fromScale(0, 0)
+        infoRightFrame.Size = UDim2.fromScale(1, 1)
+        infoRightFrame.LayoutOrder = 2
+        local infoRightFrameFlex: UIFlexItem = Instance.new("UIFlexItem")
+        infoRightFrameFlex.Parent = infoRightFrame
+        infoRightFrameFlex.FlexMode = Enum.UIFlexMode.Fill
+        local infoTitle: TextLabel = Instance.new("TextLabel")
+        infoTitle.Parent = infoRightFrame
+        infoTitle.Name = "Title"
+        infoTitle.Text = ""
+        infoTitle.Position = UDim2.fromScale(0, 0)
+        infoTitle.Size = UDim2.fromScale(1, 0.2)
+        infoTitle.TextColor3 = Color3.new(1, 1, 1)
+        infoTitle.BackgroundColor3 = Color3.new(0, 0, 0)
+        infoTitle.BackgroundTransparency = 0.5
+
+        local infoDetail: Frame = Instance.new("Frame")
+        infoDetail.Parent = infoRightFrame
+        infoDetail.Name = "Detail"
+        infoDetail.Size = UDim2.fromScale(1, 0.7)
+        infoDetail.Position = UDim2.fromScale(0, 0.3)
+        infoDetail.BackgroundTransparency = 1
+        local infoDetailGrid: UIGridLayout = Instance.new("UIGridLayout")
+        infoDetailGrid.Parent = infoDetail
+        infoDetailGrid.CellSize = UDim2.fromScale(0.2, 0.5)
+        infoDetailGrid.CellPadding = UDim2.fromScale(0, 0)
+
+        local infoTag: Frame = Instance.new("Frame")
+        infoTag.Name = "Tag"
+        infoTag.BackgroundTransparency = 1
+        local infoTagList: UIListLayout = Instance.new("UIListLayout")
+        infoTagList.Parent = infoTag
+        infoTagList.FillDirection = Enum.FillDirection.Horizontal
+        local infoTagIcon: ImageLabel = Instance.new("ImageLabel")
+        infoTagIcon.Parent = infoTag
+        infoTagIcon.Name = "Icon"
+        infoTagIcon.Position = UDim2.fromScale(0, 0)
+        infoTagIcon.Size = UDim2.fromScale(1, 1)
+        local infoTagIconSquare: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+        infoTagIconSquare.Parent = infoTagIcon
+        infoTagIconSquare.AspectRatio = 1
+        local infoTagText: TextLabel = Instance.new("TextLabel")
+        infoTagText.Name = "Words"
+        infoTagText.Parent = infoTag
+        infoTagText.Position = UDim2.fromScale(0.2, 0)
+        infoTagText.Size = UDim2.fromScale(0.8, 1)
+        infoTagText.BackgroundTransparency = 1
+        infoTagText.TextWrapped = true
 
         -- Attack Action
         local attackActionFrame: Frame = Instance.new("Frame")
@@ -177,6 +242,11 @@ function module.Init(plr)
             ["NotificationLabel"] = notificationLabel,
             ["OrderFrame"] = orderFrame,
             ["OrderText"] = orderText,
+            ["InfoFrame"] = infoFrame,
+            ["InfoImage"] = infoImage,
+            ["InfoTitle"] = infoTitle,
+            ["InfoDetail"] = infoDetail, -- Info tag frame
+            ["InfoTag"] = infoTag, -- Info tag template
         }
     end
     local playerUI: {Instance} = CreateGui()
@@ -406,11 +476,44 @@ function module.Init(plr)
         playerUI.AttackActionFrame.Visible = true
     end
 
+    local function InfoBar(data)
+        if not data.unit then return end
+        local unit: {} = data.unit
+        if type(unit) ~= "table" then warn("Unknown Unit Object") return end
+
+        -- TODO: Set image
+        playerUI.InfoTitle.Text = unit.Name
+
+        RemoveChildUI(playerUI.InfoDetail)
+
+        local function CreateTag(key, value): (TextLabel)
+            local tag: TextLabel = playerUI.InfoTag:Clone()
+            tag.Parent = playerUI.InfoDetail
+            tag:WaitForChild("Words").Text = key .. ": " .. value
+            return tag
+        end
+
+        for key, value in pairs(unit) do
+            if type(value) == "function" then continue end
+            if type(value) == "table" and getmetatable(value) ~= nil then continue end -- Class
+
+            local excludedKeys = {
+                Name = true,
+                Skills = true,
+                Effect = true,
+            }
+            if excludedKeys[key] then continue end
+
+            CreateTag(key, value)
+        end
+    end
+
     -- Handler
     FH.RegisterClient(plr, MACROS.DISPLAY_NOTIFICATION, DisplayNotification)
     FH.RegisterClient(plr, MACROS.DISPLAY_ORDER, DisplayOrder)
     FH.RegisterClient(plr, MACROS.PLAYER_INPUT, PlayerInput)
     FH.RegisterClient(plr, MACROS.CHOOSE_ATTACK, ChooseAttack)
+    FH.RegisterClient(plr, MACROS.INFO_BAR, InfoBar)
 end
 
 return module

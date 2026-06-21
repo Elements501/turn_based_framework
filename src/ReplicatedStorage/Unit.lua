@@ -220,6 +220,16 @@ function Unit:Action()
     local id: number = self.Id
     print("Actioned: " .. id, sharedList, self.Owner)
 
+    -- Show info bar
+    for _, plr in ipairs(PS:GetPlayers()) do
+        FH.ClientMessage({
+            action = MACROS.INFO_BAR,
+            send = id,
+            receive = plr,
+            unit = self:Serialize(),
+        })
+    end
+
     self.unitEffect:ExecuteEffect()
     if sharedList.unitList[id] == nil then return end -- Unit died by effect
     self.unitEffect:DecreaseEffectDuration()
