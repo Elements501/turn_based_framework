@@ -15,6 +15,7 @@ local MACROS = { -- MACROS are used to save data
     CHOOSE_ATTACK = 23,
     DISPLAY_ORDER = 24,
     INFO_BAR = 25,
+    HOVER_UNIT = 26,
     -- Client -> Server Actions
     FINISH_ACTION = 41,
     ATTACK_ACTION = 42,

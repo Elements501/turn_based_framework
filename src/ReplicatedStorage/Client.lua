@@ -2,6 +2,7 @@ local module = {}
 -- Services
 local RS: ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TWS: TweenService = game:GetService("TweenService")
+local UIS: UserInputService = game:GetService("UserInputService")
 
 -- Data
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
@@ -33,19 +34,25 @@ function module.Init(plr)
         local actionMargin: UIPadding = Instance.new("UIPadding")
         actionMargin.Parent = actionFrame
         actionMargin.PaddingBottom = UDim.new(0.05, 0)
+
+        -- Pass button
         local passButton: TextButton = Instance.new("TextButton")
         passButton.Parent = actionFrame
         passButton.Text = "Pass"
         passButton.Size = UDim2.fromScale(1, 1)
         passButton.BackgroundColor3 = Color3.new(1, 1, 1)
+        passButton.BackgroundTransparency = 0.5
         local passButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         passButtonRatio.Parent = passButton
         passButtonRatio.AspectRatio = 2
+
+        -- Attack button
         local attackButton: TextButton = Instance.new("TextButton")
         attackButton.Parent = actionFrame
         attackButton.Text = "Attack"
         attackButton.Size = UDim2.fromScale(1, 1)
         attackButton.BackgroundColor3 = Color3.new(1, 1 ,1)
+        attackButton.BackgroundTransparency = 0.5
         local attackButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         attackButtonRatio.Parent = attackButton
         attackButtonRatio.AspectRatio = 2
@@ -65,9 +72,10 @@ function module.Init(plr)
 
         local infoImage: ImageLabel = Instance.new("ImageLabel")
         infoImage.Parent = infoFrame
-        infoImage.Name = "Info"
+        infoImage.Name = "UnitIcon"
         infoImage.Size = UDim2.fromScale(1, 1)
         infoImage.Position = UDim2.fromScale(0, 0)
+        infoImage.BorderSizePixel = 0
         infoImage.LayoutOrder = 1
         local infoImageSquare: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         infoImageSquare.Parent= infoImage
@@ -77,10 +85,12 @@ function module.Init(plr)
         infoRightFrame.Parent = infoFrame
         infoRightFrame.Position = UDim2.fromScale(0, 0)
         infoRightFrame.Size = UDim2.fromScale(1, 1)
+        infoRightFrame.BackgroundTransparency = 1
         infoRightFrame.LayoutOrder = 2
         local infoRightFrameFlex: UIFlexItem = Instance.new("UIFlexItem")
         infoRightFrameFlex.Parent = infoRightFrame
         infoRightFrameFlex.FlexMode = Enum.UIFlexMode.Fill
+
         local infoTitle: TextLabel = Instance.new("TextLabel")
         infoTitle.Parent = infoRightFrame
         infoTitle.Name = "Title"
@@ -90,12 +100,13 @@ function module.Init(plr)
         infoTitle.TextColor3 = Color3.new(1, 1, 1)
         infoTitle.BackgroundColor3 = Color3.new(0, 0, 0)
         infoTitle.BackgroundTransparency = 0.5
+        infoTitle.BorderSizePixel = 0
 
         local infoDetail: Frame = Instance.new("Frame")
         infoDetail.Parent = infoRightFrame
         infoDetail.Name = "Detail"
-        infoDetail.Size = UDim2.fromScale(1, 0.7)
-        infoDetail.Position = UDim2.fromScale(0, 0.3)
+        infoDetail.Size = UDim2.fromScale(1, 0.8)
+        infoDetail.Position = UDim2.fromScale(0, 0.2)
         infoDetail.BackgroundTransparency = 1
         local infoDetailGrid: UIGridLayout = Instance.new("UIGridLayout")
         infoDetailGrid.Parent = infoDetail
@@ -113,6 +124,8 @@ function module.Init(plr)
         infoTagIcon.Name = "Icon"
         infoTagIcon.Position = UDim2.fromScale(0, 0)
         infoTagIcon.Size = UDim2.fromScale(1, 1)
+        infoTagIcon.BackgroundColor3 = Color3.new(0.25, 0.25, 0.25)
+        infoTagIcon.BorderSizePixel = 0
         local infoTagIconSquare: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         infoTagIconSquare.Parent = infoTagIcon
         infoTagIconSquare.AspectRatio = 1
@@ -127,7 +140,7 @@ function module.Init(plr)
         -- Attack Action
         local attackActionFrame: Frame = Instance.new("Frame")
         attackActionFrame.Parent = screenGui
-        attackActionFrame.Name = "Attack Action"
+        attackActionFrame.Name = "AttackAction"
         attackActionFrame.Size = UDim2.fromScale(0.8, 0.1)
         attackActionFrame.Position = UDim2.fromScale(0, 0.8)
         attackActionFrame.BackgroundColor3 = Color3.new(1, 1, 1)
@@ -162,7 +175,7 @@ function module.Init(plr)
         -- Choose Target
         local targetFrame: Frame = Instance.new("Frame")
         targetFrame.Parent = screenGui
-        targetFrame.Name = "AttackAction"
+        targetFrame.Name = "TargetFrame"
         targetFrame.Size = UDim2.fromScale(0.8, 0.1)
         targetFrame.Position = UDim2.fromScale(0, 0.8)
         targetFrame.BackgroundTransparency = 1
@@ -224,7 +237,22 @@ function module.Init(plr)
         orderText.Name = "OrderText"
         orderText.Size = UDim2.fromScale(1, 0.15)
         orderText.BackgroundTransparency = 0.5
-        -- Other attributes are set below
+        -- Other attributes are set in function
+
+        -- Hover Box
+        local hoverFrame: Frame = Instance.new("Frame")
+        hoverFrame.Name = "HoverFrame"
+        hoverFrame.Parent = screenGui
+        hoverFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+        hoverFrame.BackgroundTransparency = 0.5
+        hoverFrame.BorderSizePixel = 0
+        hoverFrame.Size = UDim2.fromScale(0.08, 0.03)
+        hoverFrame.Visible = false
+        local hoverText: TextLabel = Instance.new("TextLabel")
+        hoverText.Parent = hoverFrame
+        hoverText.Name = "HoverText"
+        hoverText.BackgroundTransparency = 1
+        hoverText.Size = UDim2.fromScale(1, 1)
 
         return {
             ["ScreenGui"] = screenGui,
@@ -247,6 +275,7 @@ function module.Init(plr)
             ["InfoTitle"] = infoTitle,
             ["InfoDetail"] = infoDetail, -- Info tag frame
             ["InfoTag"] = infoTag, -- Info tag template
+            ["HoverFrame"] = hoverFrame
         }
     end
     local playerUI: {Instance} = CreateGui()
@@ -501,11 +530,63 @@ function module.Init(plr)
                 Name = true,
                 Skills = true,
                 Effect = true,
+                Instance = true,
             }
             if excludedKeys[key] then continue end
 
             CreateTag(key, value)
         end
+    end
+
+    local function HoverUnit(data)
+        if not (data.unit and data.mode) then warn("Hover Missing Data") return end
+        local unit = data.unit
+        if not unit.Instance then warn("Unknown Unit Instance") return end
+
+        if data.mode == "Enter" then
+            -- Glow effect
+            local highlight: Highlight = Instance.new("Highlight")
+            highlight.Name = "Highlight"
+            highlight.Parent = unit.Instance
+            highlight.Adornee = unit.Instance
+            highlight.FillTransparency = 0.5
+            highlight.FillColor = Color3.new(1, 1, 1)
+            highlight.OutlineTransparency = 1
+
+            -- Hover box
+            local hoverFrame: Frame = playerUI.HoverFrame
+            hoverFrame.Visible = true
+            local hoverText: TextLabel = hoverFrame:WaitForChild("HoverText")
+            hoverText.Text = unit.Name.." ("..unit.Id..") "
+
+            UIS.InputChanged:Connect(function(input) -- Move with mouse
+                if input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local mousePos = input.Position
+
+                    -- Determine whether the frame appears left / right to cursor
+                    local offsetX: number = 0
+
+                    local camera: Camera = workspace.CurrentCamera
+                    local screenX = camera.ViewportSize.X
+                    if mousePos.X <= screenX / 2 then
+                        offsetX = 20
+                    else
+                        offsetX = -hoverFrame.AbsoluteSize.X - 20
+                    end
+
+                    hoverFrame.Position = UDim2.fromOffset(mousePos.X + offsetX, mousePos.Y)
+                end
+            end)
+
+        elseif data.mode == "Leave" then
+            -- Glow Effect
+            unit.Instance:WaitForChild("Highlight"):Destroy()
+
+            -- Hover Box
+            playerUI.HoverFrame.Visible = false
+
+        else warn("Unknown Hover Mode") return end
+
     end
 
     -- Handler
@@ -514,6 +595,7 @@ function module.Init(plr)
     FH.RegisterClient(plr, MACROS.PLAYER_INPUT, PlayerInput)
     FH.RegisterClient(plr, MACROS.CHOOSE_ATTACK, ChooseAttack)
     FH.RegisterClient(plr, MACROS.INFO_BAR, InfoBar)
+    FH.RegisterClient(plr, MACROS.HOVER_UNIT, HoverUnit)
 end
 
 return module

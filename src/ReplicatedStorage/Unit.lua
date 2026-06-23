@@ -38,7 +38,7 @@ function Unit.new(data: {})
 end
 
 function Unit:Init(server)
-    self.server = server
+    self.server = server -- Set server object
 
     local id: number = self.Id
     local part: Instance = self.Instance
@@ -57,12 +57,38 @@ function Unit:Init(server)
     FH.RegisterClient(id, MACROS.FINISH_ACTION, function() self:FinishAction() end)
     FH.RegisterClient(id, MACROS.ATTACK_ACTION, function() self:AttackAction() end)
     FH.RegisterClient(id, MACROS.APPLY_DAMAGE, function(data) self:ApplyDamage(data.skillList, data.target) end)
+
+    -- Create click detection
+    local clickDetector: ClickDetector = Instance.new("ClickDetector")
+    clickDetector.Name = "ClickDetector"
+    clickDetector.Parent = part
+    clickDetector.CursorIcon = "rbxassetid://"
+
+    clickDetector.MouseHoverEnter:Connect(function(playerHovered)
+        FH.ClientMessage({
+            action = MACROS.HOVER_UNIT,
+            send = id,
+            receive = playerHovered,
+            unit = self:Serialize(),
+            mode = "Enter"
+        })
+    end)
+
+    clickDetector.MouseHoverLeave:Connect(function(playerHovered)
+        FH.ClientMessage({
+            action = MACROS.HOVER_UNIT,
+            send = id,
+            receive = playerHovered,
+            unit = self:Serialize(),
+            mode = "Leave"
+        })
+    end)
 end
 
-function Unit:Serialize() -- Prevent cyclic tables to output
+function Unit:Serialize() -- Create self copy without cyclic reference
     local data = {}
     for key, value in pairs(self) do
-        if type(value) == "userdata" then continue end -- Roblox instances
+        if type(value) == "userdata" and typeof(value) ~= "Instance" then continue end -- Connect function and userdata
         if type(value) == "table" and getmetatable(value) ~= nil then continue end -- Class from the unit
 
         data[key] = value -- Copy a pure value table
