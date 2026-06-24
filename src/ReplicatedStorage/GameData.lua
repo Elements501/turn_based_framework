@@ -2,13 +2,6 @@
 export type Macros = {[number]: any}
 
 local MACROS = { -- MACROS are used to save data
-    -- Server <-> Server Actions
-    ROUND_COUNTER = 1,
-    ORDER_UNITS = 2,
-    TAKE_DAMAGE = 3,
-    SUMMON_UNIT = 4,
-    REMOVE_UNIT = 5,
-    UNIT_ACTION = 6,
     -- Server -> Client Actions
     DISPLAY_NOTIFICATION = 21,
     PLAYER_INPUT = 22,

@@ -2,35 +2,54 @@
 Framework for a turn-based game that can be used as a base before customisation.
 
 # Version
-**Latest stable** — `9564f7b` (main)
-- Refactored scripts into shorter modules
+**v0.2** — `b709b14` (main)
+- Full UI features
 
 # Mechanism
-- Server <-> Server and Server <-> Client communicate using the `FunctionHandler.lua` module
-    - `Register(id, action, function)` records the function, which can be called using the number `action` to the number `id`
-    - `ServerMessage()` and `ClientMessage()` then calls the registered functions
+- Server <-> Client communicate using `FunctionHandler.lua`
+    - `RegisterClient(key, action, function)` records the function, called via the `action` number to the `key` (unit id or Player)
+    - `ClientMessage(data)` dispatches to the registered function; server components call each other's methods directly (no server-to-server FH routing)
 
-- Server <-> Client communicate to each other (within and away) using Functions in `FunctionHandler.lua`
-    > Functions are used as it yields, so Roblox does not tries to run everything at once; however, Functions can only bound one function, so a handler is created to multi-thread.
-    - `ClientAction` is used to communicate between Server and Client
+- Communication uses a single RemoteFunction `ClientAction`:
     ```lua
     -- ClientAction: RemoteFunction (data: list)
     data = {
-        action: number -- {-2: Transfer Notification, -1: (DEP); 1: PlayerAct, 2: Rest, 3: AttackAction, 4: AttackTarget}
-        send: number | Player
+        action: number
+        --   21–26: Server → Client (DISPLAY_NOTIFICATION, PLAYER_INPUT, CHOOSE_ATTACK, DISPLAY_ORDER, INFO_BAR, HOVER_UNIT)
+        --   41–43: Client → Server (FINISH_ACTION, ATTACK_ACTION, APPLY_DAMAGE)
+        send:    number | Player
         receive: number | Player
         -- misc. data
     }
     ```
 
-- Permanent game data is stored in `GameData.lua`. Changing game data is stored in `SharedList.lua`
+- Permanent game data is stored in `GameData.lua`. Changing game state is stored in `SharedList.lua`
+
+- `Server`, `Unit`, `EffectSystem`, `BotSystem`, and `UnitUI` are all OOP classes instantiated with `.new()`
+
+- **Energy system** — each unit has `Energy` / `MaxEnergy`. Skills cost `Energy` to use; a unit gains +1 energy at the start of its turn. Skills whose cost exceeds current energy are unavailable (hidden from bot, blocked on client)
+
+- **Turn order** — `Server:OrderUnits()` sorts all units by Speed (ties broken by Id). `Server:RoundCounter()` broadcasts the current order and highlights the acting unit via `DISPLAY_ORDER`
+
+- **Unit interactions (client-side)**
+    - Hovering a unit shows a tooltip (name + id) that follows the cursor, and adds a `Highlight` glow to the model
+    - Clicking a unit opens the **Info Bar** (bottom panel) showing that unit's stats; a BACK button returns to the currently acting unit's info
+    - The acting unit's info is shown automatically at the start of its turn
+
+- **Notifications** — side panel shows styled messages for `"Attack"` (attacker used skill) and `"Damage"` (target took damage) events; fade out after 10 s
+
+- Attack targets are plain strings: `"SingleEnemy"`, `"SingleAlly"`, `"AllEnemy"`, `"AllAlly"`, `"Summon"`
 
 # TODO
-- [ ] Smart bot action
+- [ ] Smart bot action (currently random among affordable skills)
 - [ ] Animation Handler
-- [ ] UI and SFX
+- [ ] SFX
 - [ ] Reset/Preset
-- [ ] Implement TODO target styles and effects
+- [ ] Magic and Effect nature buffs (`natureBuff` for Nature 2 & 3)
+- [ ] HealPercent-only heal
+- [ ] Implement infinite-duration effects (Duration = -1)
+- [ ] Unit icon images (Info Bar + effect icons)
+- [ ] Summon target team routing (`.Target = "Summon"` → specify team)
 
 # Credits
 - FireAlexGame
