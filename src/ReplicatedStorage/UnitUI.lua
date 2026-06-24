@@ -1,7 +1,7 @@
-local UiSystem = {}
-UiSystem.__index = UiSystem
+local UnitUI = {}
+UnitUI.__index = UnitUI
 
-export type UiSystemType = {
+export type UnitUIType = {
     unit: {},
     effectId: number,
     hpBar: Frame,
@@ -11,14 +11,14 @@ export type UiSystemType = {
     effectFrame: Frame,
     effectTemplate: Frame,
     effectMap: { [number]: Frame },
-    UpdateHealth: (self: UiSystemType) -> (),
-    UpdateEnergy: (self: UiSystemType) -> (),
-    AddEffect: (self: UiSystemType, effect: {}) -> number,
-    UpdateEffect: (self: UiSystemType, effectId: number, duration: number) -> (),
-    RemoveEffect: (self: UiSystemType, effectId: number) -> (),
+    UpdateHealth: (self: UnitUIType) -> (),
+    UpdateEnergy: (self: UnitUIType) -> (),
+    AddEffect: (self: UnitUIType, effect: {}) -> number,
+    UpdateEffect: (self: UnitUIType, effectId: number, duration: number) -> (),
+    RemoveEffect: (self: UnitUIType, effectId: number) -> (),
 }
 
-function UiSystem.new(part: BasePart, unit: {})
+function UnitUI.new(part: BasePart, unit: {})
     -- Top-level billboard
     local topBar: BillboardGui = Instance.new("BillboardGui")
     topBar.Parent = part
@@ -50,7 +50,7 @@ function UiSystem.new(part: BasePart, unit: {})
     hpBar.ZIndex = 1
 
     local hpText: TextLabel = Instance.new("TextLabel")
-    hpText.Parent = hpBar
+    hpText.Parent = hpBackground
     hpText.Text = unit.Health .. " / " .. unit.MaxHealth
     hpText.TextColor3 = Color3.new(0.5, 0.5, 0.5)
     hpText.Size = UDim2.fromScale(1, 1)
@@ -124,19 +124,19 @@ function UiSystem.new(part: BasePart, unit: {})
         effectFrame = effectFrame,
         effectTemplate = effectTemplate,
         effectMap = {},
-    }, UiSystem)
+    }, UnitUI)
 end
 
-function UiSystem:UpdateHealth()
+function UnitUI:UpdateHealth()
     self.hpText.Text = self.unit.Health .. " / " .. self.unit.MaxHealth
     self.hpBar.Size = UDim2.fromScale(self.unit.Health / self.unit.MaxHealth * 0.96, self.hpBar.Size.Y.Scale)
 end
 
-function UiSystem:UpdateEnergy()
+function UnitUI:UpdateEnergy()
     self.energyText.Text = self.unit.Energy .. " / " .. self.unit.MaxEnergy
 end
 
-function UiSystem:AddEffect(effect: {}): number
+function UnitUI:AddEffect(effect: {}): number
     local id = self.effectId
     local icon: Frame = self.effectTemplate:Clone()
     icon.Name = effect.Name
@@ -149,14 +149,14 @@ function UiSystem:AddEffect(effect: {}): number
     return id
 end
 
-function UiSystem:UpdateEffect(effectId: number, duration: number)
+function UnitUI:UpdateEffect(effectId: number, duration: number)
     local icon = self.effectMap[effectId]
     if not icon then return end
 
     icon.EffectText.Text = duration
 end
 
-function UiSystem:RemoveEffect(effectId: number)
+function UnitUI:RemoveEffect(effectId: number)
     local icon = self.effectMap[effectId]
     if not icon then return end
 
@@ -164,4 +164,4 @@ function UiSystem:RemoveEffect(effectId: number)
     self.effectMap[effectId] = nil
 end
 
-return UiSystem
+return UnitUI

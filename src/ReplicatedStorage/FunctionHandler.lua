@@ -16,13 +16,11 @@ local clientAction: RemoteFunction = (RS:FindFirstChild("ClientAction") :: Remot
     clientAction.Name = "ClientAction"
     clientAction.Parent = RS
 
-type ServerFunction = {[number]: {[number]: UnitAction}}
 type ClientFunction = {[number | Player]: {[number]: UnitAction}}
 
-local serverFunctions: ServerFunction = {}
 local clientFunctions: ClientFunction = {}
 
-local function Dispatch(funcList: ServerFunction | ClientFunction, data: Package)
+local function Dispatch(funcList: ClientFunction, data: Package)
     local unitFunction: {[number]: UnitAction} = funcList[data.receive :: number]
     if not unitFunction then return end
 
@@ -33,27 +31,18 @@ local function Dispatch(funcList: ServerFunction | ClientFunction, data: Package
 end
 
 -- Initialisation
-function module.RegisterServer(id: number, action: number, func: UnitAction)
-    if not serverFunctions[id] then serverFunctions[id] = {} end
-    serverFunctions[id][action] = func
-end
-
 function module.RegisterClient(key: number | Player, action: number, func: UnitAction)
     if not clientFunctions[key] then clientFunctions[key] = {} end
     clientFunctions[key][action] = func
 end
 
 function module.RemoveRegister(id: number)
-    serverFunctions[id] = nil
     clientFunctions[id] = nil
 end
 
 -- Send Package
-function module.ServerMessage(data: Package)
-    Dispatch(serverFunctions, data) -- No need BindableFunction for communication within server
-end
-
 function module.ClientMessage(data: Package)
+    if not data then warn("Missing Data") return end
     if type(data.receive) == "number" then
         clientAction:InvokeServer(data)
     elseif data.receive:IsA("Player") then
