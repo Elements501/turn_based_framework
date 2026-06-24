@@ -7,7 +7,6 @@ local UIS: UserInputService = game:GetService("UserInputService")
 -- Data
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
 local attackActions: GAME_DATA.AttackAction = GAME_DATA.attackActions
-local unitTypes: GAME_DATA.UnitType = GAME_DATA.unitTypes
 local MACROS: GAME_DATA.Macros = GAME_DATA.MACROS
 
 -- Package
@@ -398,7 +397,6 @@ function module.Init(plr)
 
         -- Set text
         if msg.code == "Damage" then
-            print(data)
             notif.BorderSizePixel = 0
             notif.BackgroundTransparency = 0.5
             notif.BackgroundColor3 = Color3.new(0.85, 0.85, 0.85)
