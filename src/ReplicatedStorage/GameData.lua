@@ -177,11 +177,28 @@ local unitTypes: UnitType = {
     },
 }
 
+export type ImageUrl = {
+    [string]: string
+}
+
+local imageUrl: ImageUrl = {
+    Miscallenous = "72148980429899",
+    Health = "76079425163243",
+    MaxHealth = "105795245223959",
+    Energy = "92627000783916",
+    MaxEnergy = "90662494661566",
+    Damage = "106701992419740",
+    Power = "106701992419740",
+    Intelligence = "98404423018087",
+    Speed = "134156510847751",
+}
+
 -- Handler
 local gameData = {
     ["attackActions"] = table.freeze(attackActions),
     ["unitTypes"] = table.freeze(unitTypes),
     ["MACROS"] = table.freeze(MACROS),
+    ["imageUrl"] = table.freeze(imageUrl)
 }
 
 return gameData -- types are automatically exported as gameData.[type_name]

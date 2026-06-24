@@ -160,13 +160,13 @@ function Unit:ApplyDamage(skillList: {}, target: number | {number})
 
     if skillList.Target == "SingleEnemy" or skillList.Target == "SingleAlly" then
         local targetUnit = sharedList.unitList[target]
-        if targetUnit then targetUnit:TakeDamage(self, skillList) end
+        if targetUnit then targetUnit:TakeDamage(self.Id, skillList) end
 
     elseif skillList.Target == "AllEnemy" or skillList.Target == "AllAlly" then
         if typeof(target) ~= "table" then warn("Unknown Target List") return end
         for _, targetId in ipairs(target) do
             local targetUnit = sharedList.unitList[targetId]
-            if targetUnit then targetUnit:TakeDamage(self, skillList) end
+            if targetUnit then targetUnit:TakeDamage(self.Id, skillList) end
         end
 
     elseif skillList.Target == "Summon" then

@@ -7,6 +7,7 @@ local UIS: UserInputService = game:GetService("UserInputService")
 -- Data
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
 local attackActions: GAME_DATA.AttackAction = GAME_DATA.attackActions
+local imageUrl: GAME_DATA.ImageUrl = GAME_DATA.imageUrl
 local MACROS: GAME_DATA.Macros = GAME_DATA.MACROS
 
 -- Package
@@ -128,7 +129,7 @@ function module.Init(plr)
         infoTagIcon.Name = "Icon"
         infoTagIcon.Position = UDim2.fromScale(0, 0)
         infoTagIcon.Size = UDim2.fromScale(1, 1)
-        infoTagIcon.BackgroundColor3 = Color3.new(0.25, 0.25, 0.25)
+        infoTagIcon.BackgroundTransparency = 1
         infoTagIcon.BorderSizePixel = 0
         local infoTagIconSquare: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         infoTagIconSquare.Parent = infoTagIcon
@@ -535,6 +536,13 @@ function module.Init(plr)
             local tag: TextLabel = playerUI.InfoTag:Clone()
             tag.Parent = playerUI.InfoDetail
             tag:WaitForChild("Words").Text = key .. ": " .. value
+
+            local icon: ImageLabel = tag:WaitForChild("Icon")
+            if imageUrl[key] then
+                icon.Image = "rbxassetid://" .. imageUrl[key]
+            else
+                icon.Image = "rbxassetid://" .. imageUrl.Miscallenous
+            end
             return tag
         end
 
