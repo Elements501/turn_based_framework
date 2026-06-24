@@ -178,8 +178,10 @@ function Unit:ApplyDamage(skillList: {}, target: number | {number})
     self:FinishAction()
 end
 
-function Unit:TakeDamage(attackerId: number, skillList: {})
+function Unit:TakeDamage(attackerId, skillList)
+    if not attackerId then warn("Unknown Attacker") return end
     local id: number = self.Id
+    local attacker = sharedList.unitList[attackerId]
 
     for _, plr in ipairs(PS:GetPlayers()) do
         FH.ClientMessage({
@@ -197,47 +199,55 @@ function Unit:TakeDamage(attackerId: number, skillList: {})
 
     if skillList.Effect ~= nil then
         if type(next(skillList.Effect)) == "table" then
-            for _, effect in ipairs(skillList.Effect) do self.unitEffect:ApplyEffect(false, effect) end
+            for _, effect in ipairs(skillList.Effect) do self.unitEffect:ApplyEffect(false, effect, attacker) end
         else
-            self.unitEffect:ApplyEffect(false, skillList.Effect)
+            self.unitEffect:ApplyEffect(false, skillList.Effect, attacker)
         end
     end
 
     local damage: number? = skillList.Damage
     local nature: number? = skillList.Nature
 
-    local function GetNatureModifier(): ()->(number, number, number)
-        local add: number; local mult: number; local natureBuff: number
-
+    local function GetNatureModifier(): (number, number, number)
+        local add = 0 local mult = 1 local naturePerc = 0
         if nature == 1 then
-            add = self.unitEffect:GetEffect("PhyAdd") or 0; mult = self.unitEffect:GetEffect("PhyMult") or 1
-            natureBuff = self.Power
+            add = attacker.unitEffect:GetEffect("PhyAdd") or 0
+            mult = attacker.unitEffect:GetEffect("PhyMult") or 1
+            naturePerc = attacker.Power
+
         elseif nature == 2 then
-            add = self.unitEffect:GetEffect("MagicAdd") or 0; mult = self.unitEffect:GetEffect("MagicMult") or 1
-            natureBuff = 0 -- TODO
+            add = attacker.unitEffect:GetEffect("MagicAdd") or 0
+            mult = attacker.unitEffect:GetEffect("MagicMult") or 1
+            naturePerc = attacker.Intelligence
+
         elseif nature == 3 then
-            add = self.unitEffect:GetEffect("EffectAdd") or 0; mult = self.unitEffect:GetEffect("EffectMult") or 1
-            natureBuff = 0 -- TODO
+            add = attacker.unitEffect:GetEffect("EffectAdd") or 0
+            mult = attacker.unitEffect:GetEffect("EffectMult") or 1
+
         end
-
-        return add, mult, natureBuff
+        print("NATURE", add, mult, naturePerc)
+        return add, mult, naturePerc
     end
+    local add: number, mult: number, naturePerc: number = GetNatureModifier()
 
-    if damage >= 0 then
-        local attackAdd = self.unitEffect:GetEffect("AttackAdd") or 0
-        local attackMult = self.unitEffect:GetEffect("AttackMult") or 1
-        local add: number, mult: number, natureBuff: number = GetNatureModifier()
-        self.Health -= ( damage + attackAdd + add ) * (1 + natureBuff / 100) * attackMult * mult
+    print("OLD HEALTH", self.Health)
+    if damage >= 0 then -- Damage
+        local attackAdd = attacker.unitEffect:GetEffect("AttackAdd") or 0
+        local attackMult = attacker.unitEffect:GetEffect("AttackMult") or 1
 
-    elseif damage < 0 then
+        self.Health -= ( damage + attackAdd + add ) * (1 + naturePerc / 100) * attackMult * mult
+
+    elseif damage < 0 then -- Healing
         local heal = -damage
-        local healPerc = self.unitEffect:GetEffect("HealPerc") or 0
-        local healAdd = self.unitEffect:GetEffect("HealAdd") or 0
-        local healMult = self.unitEffect:GetEffect("HealMult") or 1
-        local add: number, mult: number, natureBuff: number = GetNatureModifier()
-        self.Health += ( heal + healAdd + add ) * (1 + natureBuff / 100) * healMult * mult
+        local healAdd = attacker.unitEffect:GetEffect("HealAdd") or 0
+        local healMult = attacker.unitEffect:GetEffect("HealMult") or 1
+
+        self.Health += ( heal + healAdd + add ) * (1 + naturePerc / 100) * healMult * mult
+
+        local healPerc = attacker.unitEffect:GetEffect("HealPerc") or 0
         self.Health *= ( 1 + healPerc )
     end
+    print("NEW HEALTH", self.Health)
 
     self.Health = math.round(self.Health * 10) / 10
     if self.Health > self.MaxHealth then

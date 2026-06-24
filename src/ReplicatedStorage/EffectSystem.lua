@@ -37,11 +37,14 @@ function EffectSystem:GetEffect(key: string): number? -- Get sum of the value of
     return num
 end
 
-function EffectSystem:ApplyEffect(existingEffect, effect) -- effect is always single
+function EffectSystem:ApplyEffect(existingEffect: boolean, effect: {}, attacker: {}) -- effect is always single
     if next(self.unit.Effect) == nil then self.unit.Effect = {} end
     effect.EffectId = self.unitUI:AddEffect(effect) -- effect passed by reference, changes is made to Unit
+    effect.OwnerId = attacker.Id
 
-    if not existingEffect then table.insert(self.unit.Effect, effect) end
+    if not existingEffect then -- Effects that exist with the unit
+        table.insert(self.unit.Effect, effect)
+    end
 end
 
 function EffectSystem:DecreaseEffectDuration()
@@ -50,10 +53,6 @@ function EffectSystem:DecreaseEffectDuration()
 
     for effectNumber, effect in pairs(effectList) do
         if not effect then continue end
-
-        if effect.EffectId == nil then -- Pre-existing effect from unit spawn
-            self:ApplyEffect(true, effect)
-        end
 
         effect.Duration -= 1 -- TODO: Duration == -1 for infinite
         self.unitUI:UpdateEffect(effect.EffectId, effect.Duration)
@@ -71,18 +70,21 @@ function EffectSystem:ExecuteEffect()
 
     for _, effect in pairs(effectList) do
         if effect.Duration <= 0 then effect.Duration = 0 return end -- TODO: Change when .Duration = -1
-        print("Effect Executed", self.id, effect)
+
+        if effect.EffectId == nil then -- Pre-existing effect from unit spawn
+            self:ApplyEffect(true, effect, self.unit)
+        end
 
         task.spawn(function() -- Damage
             local dmg: number? = effect.Damage
             if dmg == nil then return end
-            self.unit:TakeDamage(self.id, { Name = effect.Name, Nature = 3, Damage = dmg })
+            self.unit:TakeDamage(effect.OwnerId, { Name = effect.Name, Nature = 3, Damage = dmg })
         end)
 
         task.spawn(function() -- Heal
             local heal: number? = effect.HealConst
             if heal == nil and effect.HealPerc == nil then return end -- TODO: HealPercent-only heal
-            self.unit:TakeDamage(self.id, { Name = effect.Name, Nature = 3, Damage = -heal })
+            self.unit:TakeDamage(effect.OwnerId, { Name = effect.Name, Nature = 3, Damage = -heal })
         end)
     end
 end
