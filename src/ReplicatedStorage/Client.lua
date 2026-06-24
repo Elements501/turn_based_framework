@@ -69,7 +69,7 @@ function module.Init(plr)
         infoFrame.Size = UDim2.fromScale(0.8, 0.1)
         infoFrame.Position = UDim2.fromScale(0, 0.9)
         infoFrame.BackgroundColor3 = Color3.new(1, 1, 1)
-        infoFrame.BackgroundTransparency = 0.5
+        infoFrame.BackgroundTransparency = 0.25
         local infoFrameList: UIListLayout = Instance.new("UIListLayout")
         infoFrameList.Parent = infoFrame
         infoFrameList.FillDirection = Enum.FillDirection.Horizontal
@@ -176,6 +176,7 @@ function module.Init(plr)
         attackActionCancel.Text = "CANCEL"
         attackActionCancel.Size = UDim2.fromScale(1, 1)
         attackActionCancel.BackgroundColor3 = Color3.new(1, 1, 1)
+        attackActionCancel.BackgroundTransparency = 0.5
         local attackCancelRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         attackCancelRatio.Parent = attackActionCancel
         attackCancelRatio.AspectRatio = 1
@@ -184,6 +185,7 @@ function module.Init(plr)
         attackActionButton.Name = "Template"
         attackActionButton.Size = UDim2.fromScale(1, 1)
         attackActionButton.BackgroundColor3 = Color3.new(1, 1, 1)
+        attackActionButton.BackgroundTransparency = 0.5
         local attackActionButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         attackActionButtonRatio.Parent = attackActionButton
         attackActionButtonRatio.AspectRatio = 2
@@ -210,6 +212,7 @@ function module.Init(plr)
         targetCancel.Text = "CANCEL"
         targetCancel.Size = UDim2.fromScale(1, 1)
         targetCancel.BackgroundColor3 = Color3.new(1, 1, 1)
+        targetCancel.BackgroundTransparency = 0.5
         local targetCancelRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         targetCancelRatio.Parent = targetCancel
         targetCancelRatio.AspectRatio = 1
@@ -218,6 +221,7 @@ function module.Init(plr)
         targetButton.Name = "Template"
         targetButton.Size = UDim2.fromScale(1, 1)
         targetButton.BackgroundColor3 = Color3.new(1, 1, 1)
+        targetButton.BackgroundTransparency = 0.5
         local targetButtonRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
         targetButtonRatio.Parent = targetButton
         targetButtonRatio.AspectRatio = 2
@@ -237,6 +241,7 @@ function module.Init(plr)
         notificationLabel.TextSize = 8
         notificationLabel.TextScaled = false
         notificationLabel.RichText = true
+        notificationLabel.BackgroundTransparency = 0.5
 
         -- Order Panel
         local orderFrame: Frame = Instance.new("Frame")
@@ -248,6 +253,7 @@ function module.Init(plr)
         orderFrame.BackgroundTransparency = 0.5
         local orderFrameList: UIListLayout = Instance.new("UIListLayout")
         orderFrameList.Parent = orderFrame
+        orderFrameList.Padding = UDim.new(0.01, 0)
 
         local orderText: TextLabel = Instance.new("TextLabel")
         orderText.Name = "OrderText"
@@ -358,17 +364,17 @@ function module.Init(plr)
 
     -- Module Functions
     local function DisplayNotification(data)
+        local DURATION: number = 10
+        local FADE_TIME: number = 1
+
         local msg = data.msg
         if msg == nil then warn("Unknown Notification") return end
-        if msg.skill.Nature == 3 then return end -- No notification for 3: effect
 
         -- Create new notification
         local notif: TextLabel = playerUI.NotificationLabel:Clone()
         notif.Parent = playerUI.NotificationFrame
 
         local function FadeOut()
-            local FADE_TIME: number = 1
-
             local tweenInfo = TweenInfo.new(FADE_TIME, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
             local tweenEnd = {
                 BackgroundTransparency = 1,
@@ -386,31 +392,28 @@ function module.Init(plr)
         -- TODO: If overflow, then FadeOut() the oldest one
 
         local function Decay()
-            task.delay(5, FadeOut)
+            task.delay(DURATION, FadeOut)
         end
         task.spawn(Decay)
 
         -- Set text
-        local function DamageNotification()
+        if msg.code == "Damage" then
+            print(data)
             notif.BorderSizePixel = 0
             notif.BackgroundTransparency = 0.5
-            notif.BackgroundColor3 = Color3.new(1, 1, 1)
+            notif.BackgroundColor3 = Color3.new(0.85, 0.85, 0.85)
             notif.TextColor3 = Color3.new(0, 0, 0)
 
             notif.Text = msg.targetName.." ("..msg.targetId..") <font color=\"#333333\">Damaged by</font> "..msg.skill.Name.." <font color=\"#333333\">for</font> "..msg.skill.Damage
-        end
 
-        local function AttackNotification()
+        elseif msg.code == "Attack" then
             notif.BorderSizePixel = 0
             notif.BackgroundTransparency = 0.5
             notif.BackgroundColor3 = Color3.new(1, 1, 1)
             notif.TextColor3 = Color3.new(0, 0, 0)
 
             notif.Text = msg.attackerName.." ("..msg.attackerId..") <font color=\"#333333\">Attacked with</font> "..msg.skill.Name
-        end
 
-        if msg.code == "Damage" then DamageNotification()
-        elseif msg.code == "Attack" then AttackNotification()
         else warn("Unknown Notification") return end
     end
 

@@ -1,9 +1,19 @@
+local PS = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+
+-- Data
+local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
+local MACROS: GAME_DATA.Macros = GAME_DATA.MACROS
+
+-- Package
+local FH = require(RS:WaitForChild("FunctionHandler"))
+
 local EffectSystem = {}
 EffectSystem.__index = EffectSystem
 
 export type EffectSystemType = {
     unit: {},
-    unitUI: {}, -- UiSystem.lua
+    unitUI: {}, -- UnitUI.lua
     id: number,
     GetEffect: (self: EffectSystemType, key: string) -> number?,
     ApplyEffect: (self: EffectSystemType, data: {}) -> (),
@@ -66,13 +76,13 @@ function EffectSystem:ExecuteEffect()
         task.spawn(function() -- Damage
             local dmg: number? = effect.Damage
             if dmg == nil then return end
-            self.unit:TakeDamage(self.id, { Nature = 3, Damage = dmg })
+            self.unit:TakeDamage(self.id, { Name = effect.Name, Nature = 3, Damage = dmg })
         end)
 
         task.spawn(function() -- Heal
             local heal: number? = effect.HealConst
             if heal == nil and effect.HealPerc == nil then return end -- TODO: HealPercent-only heal
-            self.unit:TakeDamage(self.id, { Nature = 3, Damage = -heal })
+            self.unit:TakeDamage(self.id, { Name = effect.Name, Nature = 3, Damage = -heal })
         end)
     end
 end
