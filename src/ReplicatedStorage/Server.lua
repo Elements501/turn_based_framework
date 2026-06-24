@@ -34,8 +34,8 @@ end
 function Server:InitialiseEnemy()
     task.wait(0.5)
     self:SummonUnit(1, "Enemy", "ai")
-    self:SummonUnit(2, "Enemy", "ai")
-    self:SummonUnit(3, "Ally", "FireAlexGame")
+    self:SummonUnit(3, "Enemy", "ai")
+    self:SummonUnit(2, "Ally", "FireAlexGame")
     self:SummonUnit(4, "Ally", "FireAlexGame")
 end
 

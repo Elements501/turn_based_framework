@@ -24,11 +24,8 @@ type Data = {
 
 -- Modules
 local EffectSystem = require(RS:WaitForChild("EffectSystem"))
-type Effect = EffectSystem.EffectSystemType
 local BotSystem = require(RS:WaitForChild("BotSystem"))
-type botAction = BotSystem.BotSystemType
-local UiSystem = require(RS:WaitForChild("UiSystem"))
-type UnitUi = UiSystem.UiSystemType
+local UnitUI = require(RS:WaitForChild("UnitUI"))
 
 local function DeepCopy(original: {})
     local copy = {}
@@ -54,7 +51,7 @@ function Unit:Init(server)
     print(sharedList.unitList)
 
     -- Subsystems
-    self.unitUI = UiSystem.new(part, self)
+    self.unitUI = UnitUI.new(part, self)
     self.unitEffect = EffectSystem.new(self, self.unitUI, id)
     self.botAction = BotSystem.new(self, id)
 
@@ -191,8 +188,6 @@ function Unit:TakeDamage(attackerId: number, skillList: {})
             receive = plr,
             msg = {
                 code = "Damage",
-                attackerId = attackerId,
-                attackerName = sharedList.unitList[attackerId].Name,
                 targetId = id,
                 targetName = self.Name,
                 skill = skillList
