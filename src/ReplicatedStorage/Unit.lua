@@ -16,6 +16,11 @@ local sharedList: SHARED_LIST.SharedList = SHARED_LIST
 
 -- Package
 local FH = require(RS:WaitForChild("FunctionHandler"))
+type Data = {
+    action: number,
+    send: Player,
+    receive: number,
+}
 
 -- Modules
 local EffectSystem = require(RS:WaitForChild("EffectSystem"))
@@ -58,7 +63,7 @@ function Unit:Init(server)
     FH.RegisterClient(id, MACROS.ATTACK_ACTION, function() self:AttackAction() end)
     FH.RegisterClient(id, MACROS.APPLY_DAMAGE, function(data) self:ApplyDamage(data.skillList, data.target) end)
 
-    -- Create click detection
+    -- Click detection
     local clickDetector: ClickDetector = Instance.new("ClickDetector")
     clickDetector.Name = "ClickDetector"
     clickDetector.Parent = part
@@ -81,6 +86,16 @@ function Unit:Init(server)
             receive = playerHovered,
             unit = self:Serialize(),
             mode = "Leave"
+        })
+    end)
+
+    clickDetector.MouseClick:Connect(function(playerWhoClicked)
+        FH.ClientMessage({
+            action = MACROS.INFO_BAR,
+            send = id,
+            receive = playerWhoClicked,
+            unit = self:Serialize(),
+            returnUnit = sharedList.unitList[sharedList.actionOrder[sharedList.actionNumber - 1]]:Serialize() -- Actioning unit
         })
     end)
 end
@@ -186,10 +201,10 @@ function Unit:TakeDamage(attackerId: number, skillList: {})
     end
 
     if skillList.Effect ~= nil then
-        if type(skillList.Effect) == "table" then
+        if type(next(skillList.Effect)) == "table" then
             for _, effect in ipairs(skillList.Effect) do self.unitEffect:ApplyEffect(false, effect) end
         else
-            self.unitEffect:ApplyEffect(skillList.Effect)
+            self.unitEffect:ApplyEffect(false, skillList.Effect)
         end
     end
 

@@ -12,6 +12,11 @@ local MACROS: GAME_DATA.Macros = GAME_DATA.MACROS
 
 -- Package
 local FH = require(RS:WaitForChild("FunctionHandler"))
+type Data = {
+    action: number,
+    send: number,
+    receive: Player,
+}
 
 function module.Init(plr)
     -- GUI
@@ -136,6 +141,17 @@ function module.Init(plr)
         infoTagText.Size = UDim2.fromScale(0.8, 1)
         infoTagText.BackgroundTransparency = 1
         infoTagText.TextWrapped = true
+
+        local infoCancel: TextButton = Instance.new("TextButton")
+        infoCancel.Parent = infoFrame
+        infoCancel.Name = "InfoCancel"
+        infoCancel.Text = "BACK"
+        infoCancel.Size = UDim2.fromScale(0.05, 1)
+        infoCancel.BackgroundColor3 = Color3.new(1, 1, 1)
+        infoCancel.BackgroundTransparency = 0.5
+        infoCancel.BorderSizePixel = 0
+        infoCancel.LayoutOrder = 3
+        infoCancel.Visible = false
 
         -- Attack Action
         local attackActionFrame: Frame = Instance.new("Frame")
@@ -275,7 +291,8 @@ function module.Init(plr)
             ["InfoTitle"] = infoTitle,
             ["InfoDetail"] = infoDetail, -- Info tag frame
             ["InfoTag"] = infoTag, -- Info tag template
-            ["HoverFrame"] = hoverFrame
+            ["InfoCancel"] = infoCancel,
+            ["HoverFrame"] = hoverFrame,
         }
     end
     local playerUI: {Instance} = CreateGui()
@@ -505,13 +522,13 @@ function module.Init(plr)
         playerUI.AttackActionFrame.Visible = true
     end
 
-    local function InfoBar(data)
-        if not data.unit then return end
+    local function InfoBar(data: Data & {unit: table, returnUnit: table?})
         local unit: {} = data.unit
         if type(unit) ~= "table" then warn("Unknown Unit Object") return end
 
         -- TODO: Set image
         playerUI.InfoTitle.Text = unit.Name
+        playerUI.InfoCancel.Visible = false -- Hide for new unit replacing clicked info (returnUnit is object)
 
         RemoveChildUI(playerUI.InfoDetail)
 
@@ -536,9 +553,23 @@ function module.Init(plr)
 
             CreateTag(key, value)
         end
+
+        if type(data.returnUnit) == "table" then -- Clicked info bar
+            local infoCancel: TextButton = playerUI.InfoCancel
+            infoCancel.Visible = true
+
+            infoCancel.Activated:Connect(function()
+                InfoBar({
+                    action = data.action,
+                    send = data.send,
+                    receive = data.receive,
+                    unit = data.returnUnit,
+                })
+            end)
+        end
     end
 
-    local function HoverUnit(data)
+    local function HoverUnit(data: Data & {unit: table, mode: "Enter"|"Leave"})
         if not (data.unit and data.mode) then warn("Hover Missing Data") return end
         local unit = data.unit
         if not unit.Instance then warn("Unknown Unit Instance") return end

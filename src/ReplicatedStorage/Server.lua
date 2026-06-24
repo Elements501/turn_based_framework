@@ -1,4 +1,4 @@
-local Server = {}
+﻿local Server = {}
 Server.__index = Server
 
 -- Services
@@ -33,9 +33,10 @@ end
 
 function Server:InitialiseEnemy()
     task.wait(0.5)
+    self:SummonUnit(1, "Enemy", "ai")
     self:SummonUnit(2, "Enemy", "ai")
-    self:SummonUnit(2, "Ally", "FireAlexGame")
-    self:SummonUnit(2, "Ally", "FireAlexGame")
+    self:SummonUnit(3, "Ally", "FireAlexGame")
+    self:SummonUnit(4, "Ally", "FireAlexGame")
 end
 
 function Server:StartGame()
@@ -107,9 +108,10 @@ function Server:RoundCounter()
         self:RoundCounter()
     else
         local nextId = sharedList.actionOrder[sharedList.actionNumber]
-        sharedList.actionNumber += 1
         local nextUnit = sharedList.unitList[nextId]
         if nextUnit then task.spawn(function() nextUnit:Action() end) end
+
+        sharedList.actionNumber += 1
     end
 end
 
