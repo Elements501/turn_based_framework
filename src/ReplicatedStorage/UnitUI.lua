@@ -34,7 +34,7 @@ function UnitUI.new(part: BasePart, unit: {})
     -- Health bar
     local hpBackground: Frame = Instance.new("Frame")
     hpBackground.Parent = topBar
-    hpBackground.Name = "Health Bar"
+    hpBackground.Name = "HealthBar"
     hpBackground.BackgroundColor3 = Color3.new(1, 1, 1)
     hpBackground.BackgroundTransparency = 0
     hpBackground.Size = UDim2.fromScale(1, 0.4)
@@ -61,6 +61,7 @@ function UnitUI.new(part: BasePart, unit: {})
     -- Energy Bar
     local energyBar: Frame = Instance.new("Frame")
     energyBar.Parent = topBar
+    energyBar.Name = "EnergyBar"
     energyBar.BackgroundColor3 = Color3.new(0, 0, 0)
     energyBar.BackgroundTransparency = 0
     energyBar.Size = UDim2.fromScale(1, 0.2)
@@ -79,7 +80,7 @@ function UnitUI.new(part: BasePart, unit: {})
     -- Status effect bar
     local effectFrame: Frame = Instance.new("Frame")
     effectFrame.Parent = topBar
-    effectFrame.Name = "Status Bar"
+    effectFrame.Name = "StatusBar"
     effectFrame.Size = UDim2.fromScale(1, 0.4)
     effectFrame.BackgroundTransparency = 1
     effectFrame.ZIndex = 0

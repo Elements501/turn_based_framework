@@ -198,10 +198,8 @@ function Unit:TakeDamage(attackerId, skillList)
     end
 
     if skillList.Effect ~= nil then
-        if type(next(skillList.Effect)) == "table" then
-            for _, effect in ipairs(skillList.Effect) do self.unitEffect:ApplyEffect(false, effect, attacker) end
-        else
-            self.unitEffect:ApplyEffect(false, skillList.Effect, attacker)
+        for _, effect in ipairs(skillList.Effect) do
+            self.unitEffect:ApplyEffect(false, effect, attacker)
         end
     end
 
@@ -224,13 +222,13 @@ function Unit:TakeDamage(attackerId, skillList)
             add = attacker.unitEffect:GetEffect("EffectAdd") or 0
             mult = attacker.unitEffect:GetEffect("EffectMult") or 1
 
-        end
-        print("NATURE", add, mult, naturePerc)
+        else warn("Unknown Nature") return end
+
+        print("NATURE: ", nature, add, mult, naturePerc)
         return add, mult, naturePerc
     end
     local add: number, mult: number, naturePerc: number = GetNatureModifier()
 
-    print("OLD HEALTH", self.Health)
     if damage >= 0 then -- Damage
         local attackAdd = attacker.unitEffect:GetEffect("AttackAdd") or 0
         local attackMult = attacker.unitEffect:GetEffect("AttackMult") or 1
@@ -247,7 +245,6 @@ function Unit:TakeDamage(attackerId, skillList)
         local healPerc = attacker.unitEffect:GetEffect("HealPerc") or 0
         self.Health *= ( 1 + healPerc )
     end
-    print("NEW HEALTH", self.Health)
 
     self.Health = math.round(self.Health * 10) / 10
     if self.Health > self.MaxHealth then

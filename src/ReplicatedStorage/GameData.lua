@@ -82,7 +82,7 @@ local attackActions: AttackAction = {
         Nature = 2,
         Target = "SingleAlly",
         Energy = 1,
-        Effect = { Name = "Regeneration", Duration = 2, HealConst = 1 }
+        Effect = { [1] = { Name = "Regeneration", Duration = 2, HealConst = 1, Nature = 2 } }
     },
     [5] = {
         Name = "Poison Sting",
@@ -90,7 +90,7 @@ local attackActions: AttackAction = {
         Nature = 2,
         Target = "SingleEnemy",
         Energy = 0,
-        Effect = { Name = "Poison", Duration = 3, Damage = 1 }
+        Effect = { [1] = { Name = "Poison", Duration = 3, Damage = 1, Nature = 2 } }
     },
     [6] = {
         Name = "Mitosis",
@@ -170,9 +170,7 @@ local unitTypes: UnitType = {
         Health = 8,
         MaxEnergy = 1,
         Energy  = 0,
-        Effect = {
-            [1] = { Name = "Spirit Mending", Duration = 99, HealConst = 0.5, HealMult = 1.5, },
-        },
+        Effect = { [1] = { Name = "Spirit Mending", Duration = 99, HealConst = 0.5, HealMult = 1.5, Nature = 3 } },
         Skills = {1, 4}
     },
 }
@@ -193,12 +191,23 @@ local imageUrl: ImageUrl = {
     Speed = "134156510847751",
 }
 
+export type EffectDescription = {
+    [string]: string
+}
+
+local effectDescription: EffectDescription = {
+    ["Poison"] = "Inflict effect damage per turn",
+    ["Regeneration"] = "Provides magic healing per turn",
+    ["Spirit Mending"] = "Provides small amount of self effect healing per turn"
+}
+
 -- Handler
 local gameData = {
     ["attackActions"] = table.freeze(attackActions),
     ["unitTypes"] = table.freeze(unitTypes),
     ["MACROS"] = table.freeze(MACROS),
-    ["imageUrl"] = table.freeze(imageUrl)
+    ["imageUrl"] = table.freeze(imageUrl),
+    ["effectDescription"] = table.freeze(effectDescription),
 }
 
 return gameData -- types are automatically exported as gameData.[type_name]

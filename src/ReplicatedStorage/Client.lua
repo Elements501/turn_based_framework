@@ -8,6 +8,7 @@ local UIS: UserInputService = game:GetService("UserInputService")
 local GAME_DATA: {[string]: {}} = require(RS:WaitForChild("GameData"))
 local attackActions: GAME_DATA.AttackAction = GAME_DATA.attackActions
 local imageUrl: GAME_DATA.ImageUrl = GAME_DATA.imageUrl
+local effectDescription: GAME_DATA.EffectDescription = GAME_DATA.effectDescription
 local MACROS: GAME_DATA.Macros = GAME_DATA.MACROS
 
 -- Package
@@ -29,7 +30,7 @@ function module.Init(plr)
         actionFrame.Parent = screenGui
         actionFrame.Name = "Action"
         actionFrame.Size = UDim2.fromScale(0.8, 0.1)
-        actionFrame.Position = UDim2.fromScale(0, 0.8)
+        actionFrame.Position = UDim2.fromScale(0, 0.7)
         actionFrame.BackgroundTransparency = 1
         actionFrame.Visible = false
         local actionUIList: UIListLayout = Instance.new("UIListLayout")
@@ -66,8 +67,8 @@ function module.Init(plr)
         local infoFrame: Frame = Instance.new("Frame")
         infoFrame.Parent = screenGui
         infoFrame.Name = "Information"
-        infoFrame.Size = UDim2.fromScale(0.8, 0.1)
-        infoFrame.Position = UDim2.fromScale(0, 0.9)
+        infoFrame.Size = UDim2.fromScale(0.8, 0.2)
+        infoFrame.Position = UDim2.fromScale(0, 0.8)
         infoFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         infoFrame.BackgroundTransparency = 0.25
         local infoFrameList: UIListLayout = Instance.new("UIListLayout")
@@ -88,6 +89,7 @@ function module.Init(plr)
 
         local infoRightFrame: Frame = Instance.new("Frame")
         infoRightFrame.Parent = infoFrame
+        infoRightFrame.Name = "MainInfoFrame"
         infoRightFrame.Position = UDim2.fromScale(0, 0)
         infoRightFrame.Size = UDim2.fromScale(1, 1)
         infoRightFrame.BackgroundTransparency = 1
@@ -109,14 +111,48 @@ function module.Init(plr)
 
         local infoDetail: Frame = Instance.new("Frame")
         infoDetail.Parent = infoRightFrame
-        infoDetail.Name = "Detail"
-        infoDetail.Size = UDim2.fromScale(1, 0.8)
+        infoDetail.Name = "Stats"
+        infoDetail.Size = UDim2.fromScale(1, 0.5)
         infoDetail.Position = UDim2.fromScale(0, 0.2)
         infoDetail.BackgroundTransparency = 1
         local infoDetailGrid: UIGridLayout = Instance.new("UIGridLayout")
         infoDetailGrid.Parent = infoDetail
-        infoDetailGrid.CellSize = UDim2.fromScale(0.2, 0.5)
+        infoDetailGrid.CellSize = UDim2.fromScale(0.1, 0.5)
         infoDetailGrid.CellPadding = UDim2.fromScale(0, 0)
+
+        local infoEffectsFrame: ScrollingFrame = Instance.new("ScrollingFrame")
+        infoEffectsFrame.Parent = infoRightFrame
+        infoEffectsFrame.Name = "Effects"
+        infoEffectsFrame.Size = UDim2.fromScale(0.5, 0.3)
+        infoEffectsFrame.Position = UDim2.fromScale(0, 0.7)
+        infoEffectsFrame.BackgroundTransparency = 1
+        infoEffectsFrame.ScrollBarThickness = 0
+        infoEffectsFrame.ScrollingDirection = Enum.ScrollingDirection.X
+        infoEffectsFrame.CanvasSize = UDim2.fromScale(0, 0)
+        infoEffectsFrame.AutomaticCanvasSize = Enum.AutomaticSize.X
+        local infoEffectsList: UIListLayout = Instance.new("UIListLayout")
+        infoEffectsList.Parent = infoEffectsFrame
+        infoEffectsList.FillDirection = Enum.FillDirection.Horizontal
+        local infoEffectPadding: UIPadding = Instance.new("UIPadding")
+        infoEffectPadding.Parent = infoEffectsFrame
+        infoEffectPadding.PaddingBottom = UDim.new(0.1, 0); infoEffectPadding.PaddingTop = UDim.new(0.1, 0)
+        infoEffectPadding.PaddingLeft = UDim.new(0.01, 0); infoEffectPadding.PaddingRight = UDim.new(0.01, 0)
+
+        local infoEffectDetail: ScrollingFrame = Instance.new("ScrollingFrame")
+        infoEffectDetail.Parent = infoRightFrame
+        infoEffectDetail.Name = "InfoDetail"
+        infoEffectDetail.Position = UDim2.fromScale(0.5, 0.7)
+        infoEffectDetail.Size = UDim2.fromScale(0.5, 0.3)
+        infoEffectDetail.BackgroundTransparency = 1
+        infoEffectDetail.BorderSizePixel = 0
+        infoEffectDetail.ScrollBarThickness = 0
+        infoEffectDetail.ScrollingDirection = Enum.ScrollingDirection.Y
+        infoEffectDetail.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        infoEffectDetail.CanvasSize = UDim2.fromScale(0, 0)
+        local infoEffectDetailGrid: UIGridLayout = Instance.new("UIGridLayout")
+        infoEffectDetailGrid.Parent = infoEffectDetail
+        infoEffectDetailGrid.CellSize = UDim2.fromScale(0.5 , 0.5)
+        infoEffectDetailGrid.CellPadding = UDim2.fromScale(0, 0)
 
         local infoTag: Frame = Instance.new("Frame")
         infoTag.Name = "Tag"
@@ -127,7 +163,7 @@ function module.Init(plr)
         local infoTagIcon: ImageLabel = Instance.new("ImageLabel")
         infoTagIcon.Parent = infoTag
         infoTagIcon.Name = "Icon"
-        infoTagIcon.Position = UDim2.fromScale(0, 0)
+        infoTagIcon.Position = UDim2.fromScale(0, 0.1)
         infoTagIcon.Size = UDim2.fromScale(1, 1)
         infoTagIcon.BackgroundTransparency = 1
         infoTagIcon.BorderSizePixel = 0
@@ -140,7 +176,37 @@ function module.Init(plr)
         infoTagText.Position = UDim2.fromScale(0.2, 0)
         infoTagText.Size = UDim2.fromScale(0.8, 1)
         infoTagText.BackgroundTransparency = 1
+        infoTagText.TextSize = 7
         infoTagText.TextWrapped = true
+        local infoTagTextFlex: UIFlexItem = Instance.new("UIFlexItem")
+        infoTagTextFlex.Parent = infoTagText
+        infoTagTextFlex.FlexMode = Enum.UIFlexMode.Fill
+
+        local infoEffect: Frame = Instance.new("Frame")
+        infoEffect.Name = "Effect"
+        infoEffect.Size = UDim2.fromScale(1, 1)
+        local infoEffectRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+        infoEffectRatio.Parent = infoEffect
+        infoEffectRatio.AspectRatio = 1
+        local infoEffectImage: ImageLabel = Instance.new("ImageLabel")
+        infoEffectImage.Name = "EffectImage"
+        infoEffectImage.Parent = infoEffect
+        infoEffectImage.Size = UDim2.fromScale(1, 1)
+        infoEffectImage.ZIndex = 0
+        local infoEffectText: TextLabel = Instance.new("TextLabel")
+        infoEffectText.Name = "EffectText"
+        infoEffectText.Parent = infoEffect
+        infoEffectText.Size = UDim2.fromScale(1, 1)
+        infoEffectText.TextColor3 = Color3.new(0, 0, 0)
+        infoEffectText.TextScaled = true
+        infoEffectText.BackgroundTransparency = 1
+        infoEffectText.ZIndex = 1
+        local infoEffectButton: TextButton = Instance.new("TextButton")
+        infoEffectButton.Parent = infoEffect
+        infoEffectButton.Name = "Button"
+        infoEffectButton.Size = UDim2.fromScale(1, 1)
+        infoEffectButton.Text = ""
+        infoEffectButton.BackgroundTransparency = 1
 
         local infoCancel: TextButton = Instance.new("TextButton")
         infoCancel.Parent = infoFrame
@@ -158,7 +224,7 @@ function module.Init(plr)
         attackActionFrame.Parent = screenGui
         attackActionFrame.Name = "AttackAction"
         attackActionFrame.Size = UDim2.fromScale(0.8, 0.1)
-        attackActionFrame.Position = UDim2.fromScale(0, 0.8)
+        attackActionFrame.Position = UDim2.fromScale(0, 0.7)
         attackActionFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         attackActionFrame.BackgroundTransparency = 1
         attackActionFrame.Visible = false
@@ -195,7 +261,7 @@ function module.Init(plr)
         targetFrame.Parent = screenGui
         targetFrame.Name = "TargetFrame"
         targetFrame.Size = UDim2.fromScale(0.8, 0.1)
-        targetFrame.Position = UDim2.fromScale(0, 0.8)
+        targetFrame.Position = UDim2.fromScale(0, 0.7)
         targetFrame.BackgroundTransparency = 1
         targetFrame.Visible = false
         local targetFrameUIList: UIListLayout = Instance.new("UIListLayout")
@@ -295,8 +361,11 @@ function module.Init(plr)
             ["InfoFrame"] = infoFrame,
             ["InfoImage"] = infoImage,
             ["InfoTitle"] = infoTitle,
-            ["InfoDetail"] = infoDetail, -- Info tag frame
-            ["InfoTag"] = infoTag, -- Info tag template
+            ["InfoDetail"] = infoDetail,
+            ["InfoEffectsFrame"] = infoEffectsFrame,
+            ["InfoTag"] = infoTag,
+            ["InfoEffect"] = infoEffect,
+            ["InfoEffectDetail"] = infoEffectDetail,
             ["InfoCancel"] = infoCancel,
             ["HoverFrame"] = hoverFrame,
         }
@@ -531,10 +600,13 @@ function module.Init(plr)
         playerUI.InfoCancel.Visible = false -- Hide for new unit replacing clicked info (returnUnit is object)
 
         RemoveChildUI(playerUI.InfoDetail)
+        RemoveChildUI(playerUI.InfoEffectsFrame)
+        RemoveChildUI(playerUI.InfoEffectDetail)
 
-        local function CreateTag(key, value): (TextLabel)
+        local function CreateTag(key, value, parent: Frame|ScrollingFrame): (TextLabel)
             local tag: TextLabel = playerUI.InfoTag:Clone()
-            tag.Parent = playerUI.InfoDetail
+            tag.Parent = parent
+
             tag:WaitForChild("Words").Text = key .. ": " .. value
 
             local icon: ImageLabel = tag:WaitForChild("Icon")
@@ -546,6 +618,37 @@ function module.Init(plr)
             return tag
         end
 
+        local function CreateEffect(effect: GAME_DATA.EffectVariable): (Frame)
+            local effectFrame: Frame = playerUI.InfoEffect:Clone()
+            effectFrame.Parent = playerUI.InfoEffectsFrame
+
+            effectFrame:WaitForChild("EffectText").Text = effect.Duration
+
+            local button: TextButton = effectFrame:WaitForChild("Button")
+            button.Activated:Connect(function() -- Show details
+                RemoveChildUI(playerUI.InfoEffectDetail)
+
+                local tag: TextLabel = playerUI.InfoTag:Clone() -- Reuse detail tags
+                tag.Parent = playerUI.InfoEffectDetail
+                tag:WaitForChild("Icon"):Destroy()
+                tag:WaitForChild("Words").Text = effectDescription[effect.Name]
+
+                local excludedKeys = {
+                    Name = true,
+                    EffectId = true,
+                    Duration = true,
+                }
+                for key, value in pairs(effect) do
+                    if excludedKeys[key] then continue end
+                    CreateTag(key, value, playerUI.InfoEffectDetail)
+                end
+
+            end)
+
+            return effectFrame
+        end
+
+        -- Create tags
         for key, value in pairs(unit) do
             if type(value) == "function" then continue end
             if type(value) == "table" and getmetatable(value) ~= nil then continue end -- Class
@@ -558,22 +661,32 @@ function module.Init(plr)
             }
             if excludedKeys[key] then continue end
 
-            CreateTag(key, value)
+            CreateTag(key, value, playerUI.InfoDetail)
+        end
+
+        -- Create effects
+        for _, effect in ipairs(unit.Effect) do
+            CreateEffect(effect)
         end
 
         if type(data.returnUnit) == "table" then -- Clicked info bar
-            local infoCancel: TextButton = playerUI.InfoCancel
-            infoCancel.Visible = true
+            if unit.Id ~= data.returnUnit.Id then -- Clicked back onto unit of its turn
 
-            infoCancel.Activated:Connect(function()
-                InfoBar({
-                    action = data.action,
-                    send = data.send,
-                    receive = data.receive,
-                    unit = data.returnUnit,
-                })
-            end)
+                local infoCancel: TextButton = playerUI.InfoCancel
+                infoCancel.Visible = true
+
+                infoCancel.Activated:Connect(function()
+                    InfoBar({
+                        action = data.action,
+                        send = data.send,
+                        receive = data.receive,
+                        unit = data.returnUnit,
+                    })
+                end)
+
+            end
         end
+
     end
 
     local function HoverUnit(data: Data & {unit: table, mode: "Enter"|"Leave"})

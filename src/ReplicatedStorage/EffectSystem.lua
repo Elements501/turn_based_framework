@@ -78,13 +78,13 @@ function EffectSystem:ExecuteEffect()
         task.spawn(function() -- Damage
             local dmg: number? = effect.Damage
             if dmg == nil then return end
-            self.unit:TakeDamage(effect.OwnerId, { Name = effect.Name, Nature = 3, Damage = dmg })
+            self.unit:TakeDamage(effect.OwnerId, { Name = effect.Name, Nature = effect.Nature, Damage = dmg })
         end)
 
         task.spawn(function() -- Heal
             local heal: number? = effect.HealConst
             if heal == nil and effect.HealPerc == nil then return end -- TODO: HealPercent-only heal
-            self.unit:TakeDamage(effect.OwnerId, { Name = effect.Name, Nature = 3, Damage = -heal })
+            self.unit:TakeDamage(effect.OwnerId, { Name = effect.Name, Nature = effect.Nature, Damage = -heal })
         end)
     end
 end
