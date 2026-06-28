@@ -103,46 +103,77 @@ function module.Init(plr)
         infoTitle.Name = "Title"
         infoTitle.Text = ""
         infoTitle.Position = UDim2.fromScale(0, 0)
-        infoTitle.Size = UDim2.fromScale(1, 0.2)
+        infoTitle.Size = UDim2.fromScale(1, 0.15)
         infoTitle.TextColor3 = Color3.new(1, 1, 1)
         infoTitle.BackgroundColor3 = Color3.new(0, 0, 0)
         infoTitle.BackgroundTransparency = 0.5
         infoTitle.BorderSizePixel = 0
+        infoTitle.TextScaled = true
 
-        local infoDetail: Frame = Instance.new("Frame")
+        local infoDetail: ScrollingFrame = Instance.new("ScrollingFrame")
         infoDetail.Parent = infoRightFrame
         infoDetail.Name = "Stats"
-        infoDetail.Size = UDim2.fromScale(1, 0.5)
-        infoDetail.Position = UDim2.fromScale(0, 0.2)
-        infoDetail.BackgroundTransparency = 1
+        infoDetail.Size = UDim2.fromScale(1, 0.35)
+        infoDetail.Position = UDim2.fromScale(0, 0.15)
+        infoDetail.BackgroundTransparency = 0.5
+        infoDetail.ScrollBarThickness = 0
+        infoDetail.ScrollingDirection = Enum.ScrollingDirection.Y
+        infoDetail.CanvasSize = UDim2.fromScale(0, 0)
+        infoDetail.AutomaticCanvasSize = Enum.AutomaticSize.Y
         local infoDetailGrid: UIGridLayout = Instance.new("UIGridLayout")
         infoDetailGrid.Parent = infoDetail
-        infoDetailGrid.CellSize = UDim2.fromScale(0.1, 0.5)
-        infoDetailGrid.CellPadding = UDim2.fromScale(0, 0)
+        infoDetailGrid.CellSize = UDim2.fromScale(0.15, 0.6)
+        infoDetailGrid.CellPadding = UDim2.fromScale(0.05, 0)
 
         local infoEffectsFrame: ScrollingFrame = Instance.new("ScrollingFrame")
         infoEffectsFrame.Parent = infoRightFrame
         infoEffectsFrame.Name = "Effects"
-        infoEffectsFrame.Size = UDim2.fromScale(0.5, 0.3)
-        infoEffectsFrame.Position = UDim2.fromScale(0, 0.7)
+        infoEffectsFrame.Size = UDim2.fromScale(0.25, 0.5)
+        infoEffectsFrame.Position = UDim2.fromScale(0, 0.5)
         infoEffectsFrame.BackgroundTransparency = 1
         infoEffectsFrame.ScrollBarThickness = 0
         infoEffectsFrame.ScrollingDirection = Enum.ScrollingDirection.X
         infoEffectsFrame.CanvasSize = UDim2.fromScale(0, 0)
         infoEffectsFrame.AutomaticCanvasSize = Enum.AutomaticSize.X
-        local infoEffectsList: UIListLayout = Instance.new("UIListLayout")
-        infoEffectsList.Parent = infoEffectsFrame
-        infoEffectsList.FillDirection = Enum.FillDirection.Horizontal
+        local infoEffectsGrid: UIGridStyleLayout = Instance.new("UIGridLayout")
+        infoEffectsGrid.Parent = infoEffectsFrame
+        infoEffectsGrid.FillDirection = Enum.FillDirection.Horizontal
+        infoEffectsGrid.CellSize = UDim2.fromScale(0.5, 0.5)
+        infoEffectsGrid.CellPadding = UDim2.fromScale(0.05, 0.05)
+        local infoEffectRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+        infoEffectRatio.Parent = infoEffectsGrid
+        infoEffectRatio.AspectRatio = 1
         local infoEffectPadding: UIPadding = Instance.new("UIPadding")
         infoEffectPadding.Parent = infoEffectsFrame
         infoEffectPadding.PaddingBottom = UDim.new(0.1, 0); infoEffectPadding.PaddingTop = UDim.new(0.1, 0)
         infoEffectPadding.PaddingLeft = UDim.new(0.01, 0); infoEffectPadding.PaddingRight = UDim.new(0.01, 0)
 
+        local infoEffectText: Frame = Instance.new("Frame")
+        infoEffectText.Parent = infoRightFrame
+        infoEffectText.Name = "InfoEffectTitle"
+        infoEffectText.Position = UDim2.fromScale(0.25, 0.5)
+        infoEffectText.Size = UDim2.fromScale(0.5, 0.5)
+        infoEffectText.BackgroundTransparency = 1
+        local infoEffectTitle: TextLabel = Instance.new("TextLabel")
+        infoEffectTitle.Parent = infoEffectText
+        infoEffectTitle.Name = "Title"
+        infoEffectTitle.Position = UDim2.fromScale(0, 0.1)
+        infoEffectTitle.Size = UDim2.fromScale(1, 0.15)
+        infoEffectTitle.Text = ""
+        infoEffectTitle.BackgroundTransparency = 1
+        local infoEffectDescription: TextLabel = Instance.new("TextLabel")
+        infoEffectDescription.Parent = infoEffectText
+        infoEffectDescription.Name = "Description"
+        infoEffectDescription.Position = UDim2.fromScale(0, 0.25)
+        infoEffectDescription.Size = UDim2.fromScale(1, 0.75)
+        infoEffectDescription.Text = ""
+        infoEffectDescription.BackgroundTransparency = 1
+
         local infoEffectDetail: ScrollingFrame = Instance.new("ScrollingFrame")
         infoEffectDetail.Parent = infoRightFrame
-        infoEffectDetail.Name = "InfoDetail"
-        infoEffectDetail.Position = UDim2.fromScale(0.5, 0.7)
-        infoEffectDetail.Size = UDim2.fromScale(0.5, 0.3)
+        infoEffectDetail.Name = "InfoEffectDetail"
+        infoEffectDetail.Position = UDim2.fromScale(0.75, 0.5)
+        infoEffectDetail.Size = UDim2.fromScale(0.25, 0.5)
         infoEffectDetail.BackgroundTransparency = 1
         infoEffectDetail.BorderSizePixel = 0
         infoEffectDetail.ScrollBarThickness = 0
@@ -184,23 +215,19 @@ function module.Init(plr)
 
         local infoEffect: Frame = Instance.new("Frame")
         infoEffect.Name = "Effect"
-        infoEffect.Size = UDim2.fromScale(1, 1)
-        local infoEffectRatio: UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
-        infoEffectRatio.Parent = infoEffect
-        infoEffectRatio.AspectRatio = 1
         local infoEffectImage: ImageLabel = Instance.new("ImageLabel")
         infoEffectImage.Name = "EffectImage"
         infoEffectImage.Parent = infoEffect
         infoEffectImage.Size = UDim2.fromScale(1, 1)
         infoEffectImage.ZIndex = 0
-        local infoEffectText: TextLabel = Instance.new("TextLabel")
-        infoEffectText.Name = "EffectText"
-        infoEffectText.Parent = infoEffect
-        infoEffectText.Size = UDim2.fromScale(1, 1)
-        infoEffectText.TextColor3 = Color3.new(0, 0, 0)
-        infoEffectText.TextScaled = true
-        infoEffectText.BackgroundTransparency = 1
-        infoEffectText.ZIndex = 1
+        local infoEffectNumber: TextLabel = Instance.new("TextLabel")
+        infoEffectNumber.Name = "EffectText"
+        infoEffectNumber.Parent = infoEffect
+        infoEffectNumber.Size = UDim2.fromScale(1, 1)
+        infoEffectNumber.TextColor3 = Color3.new(0, 0, 0)
+        infoEffectNumber.TextScaled = true
+        infoEffectNumber.BackgroundTransparency = 1
+        infoEffectNumber.ZIndex = 1
         local infoEffectButton: TextButton = Instance.new("TextButton")
         infoEffectButton.Parent = infoEffect
         infoEffectButton.Name = "Button"
@@ -365,6 +392,7 @@ function module.Init(plr)
             ["InfoEffectsFrame"] = infoEffectsFrame,
             ["InfoTag"] = infoTag,
             ["InfoEffect"] = infoEffect,
+            ["InfoEffectText"] = infoEffectText,
             ["InfoEffectDetail"] = infoEffectDetail,
             ["InfoCancel"] = infoCancel,
             ["HoverFrame"] = hoverFrame,
@@ -599,6 +627,9 @@ function module.Init(plr)
         playerUI.InfoTitle.Text = unit.Name
         playerUI.InfoCancel.Visible = false -- Hide for new unit replacing clicked info (returnUnit is object)
 
+        playerUI.InfoEffectText:WaitForChild("Title").Text = ""
+        playerUI.InfoEffectText:WaitForChild("Description").Text = ""
+
         RemoveChildUI(playerUI.InfoDetail)
         RemoveChildUI(playerUI.InfoEffectsFrame)
         RemoveChildUI(playerUI.InfoEffectDetail)
@@ -628,10 +659,8 @@ function module.Init(plr)
             button.Activated:Connect(function() -- Show details
                 RemoveChildUI(playerUI.InfoEffectDetail)
 
-                local tag: TextLabel = playerUI.InfoTag:Clone() -- Reuse detail tags
-                tag.Parent = playerUI.InfoEffectDetail
-                tag:WaitForChild("Icon"):Destroy()
-                tag:WaitForChild("Words").Text = effectDescription[effect.Name]
+                playerUI.InfoEffectText:WaitForChild("Title").Text = effect.Name
+                playerUI.InfoEffectText:WaitForChild("Description").Text = effectDescription[effect.Name]
 
                 local excludedKeys = {
                     Name = true,
